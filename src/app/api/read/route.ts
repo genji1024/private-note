@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase
     .from("read_status")
-    .upsert({ entry_id, reader_id });
+    .upsert({ entry_id, reader_id: readerId });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
