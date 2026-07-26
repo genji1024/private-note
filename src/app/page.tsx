@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import type { Entry } from "@/lib/types";
 import EntryCard from "@/components/EntryCard";
 import NewEntryForm from "@/components/NewEntryForm";
@@ -12,7 +12,7 @@ export default async function HomePage() {
 
   const userId = (session.user as any).id as string;
 
-  const { data: entries } = await supabase
+  const { data: entries } = await supabaseAdmin
     .rpc("get_entries_with_read_status", { p_current_user_id: userId });
 
   return (
