@@ -21,10 +21,19 @@ export default async function ProfilePage() {
 
   return (
     <div className="container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
         <h2 style={{ fontSize: "1.5rem" }}>プロフィール設定</h2>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <a href="/" className="btn btn--ghost">戻る</a>
+          <a href="/" className="btn btn--ghost">
+            戻る
+          </a>
           <LogoutButton />
         </div>
       </div>

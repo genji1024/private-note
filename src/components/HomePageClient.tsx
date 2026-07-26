@@ -24,14 +24,19 @@ export default function HomePageClient({
   return (
     <>
       {/* Tab menu */}
-      <div style={{
-        display: "flex",
-        gap: "0",
-        marginBottom: "1rem",
-        overflowX: "auto",
-        borderBottom: "1px solid var(--border)",
-      }}>
-        <TabButton active={activeTab === "diary"} onClick={() => setActiveTab("diary")}>
+      <div
+        style={{
+          display: "flex",
+          gap: "0",
+          marginBottom: "1rem",
+          overflowX: "auto",
+          borderBottom: "1px solid var(--border)",
+        }}
+      >
+        <TabButton
+          active={activeTab === "diary"}
+          onClick={() => setActiveTab("diary")}
+        >
           日記
         </TabButton>
         {threadsWithComments.map(({ thread }) => (
@@ -43,7 +48,13 @@ export default function HomePageClient({
             {thread.title}
           </TabButton>
         ))}
-        <TabButton active={activeTab === "new"} onClick={() => { setActiveTab("new"); setShowNewThreadForm(true); }}>
+        <TabButton
+          active={activeTab === "new"}
+          onClick={() => {
+            setActiveTab("new");
+            setShowNewThreadForm(true);
+          }}
+        >
           +
         </TabButton>
       </div>
@@ -57,9 +68,7 @@ export default function HomePageClient({
         />
       )}
 
-      {activeTab === "new" && showNewThreadForm && (
-        <NewThreadForm />
-      )}
+      {activeTab === "new" && showNewThreadForm && <NewThreadForm />}
 
       {threadsWithComments.map(({ thread, comments }) =>
         activeTab === thread.id ? (
@@ -75,9 +84,22 @@ export default function HomePageClient({
       {/* Thread management list (shown when no specific thread is active) */}
       {activeTab === "new" && threadsWithComments.length > 0 && (
         <>
-          <h3 style={{ fontSize: "1rem", color: "#666", marginTop: "1.5rem", marginBottom: "0.75rem" }}>スレッド一覧</h3>
+          <h3
+            style={{
+              fontSize: "1rem",
+              color: "#666",
+              marginTop: "1.5rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            スレッド一覧
+          </h3>
           {threadsWithComments.map(({ thread }) => (
-            <ThreadListItem key={thread.id} thread={thread} currentUserId={currentUserId} />
+            <ThreadListItem
+              key={thread.id}
+              thread={thread}
+              currentUserId={currentUserId}
+            />
           ))}
         </>
       )}
@@ -102,7 +124,9 @@ function TabButton({
         background: active ? "var(--accent)" : "transparent",
         color: active ? "#fff" : "var(--accent)",
         border: "none",
-        borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+        borderBottom: active
+          ? "2px solid var(--accent)"
+          : "2px solid transparent",
         cursor: "pointer",
         fontSize: "0.95rem",
         whiteSpace: "nowrap",

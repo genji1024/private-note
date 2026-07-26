@@ -49,7 +49,11 @@ export default function ImageUpload({
           <img
             src={imageUrl}
             alt="アップロード画像"
-            style={{ width: "100%", borderRadius: "6px", marginBottom: "0.5rem" }}
+            style={{
+              width: "100%",
+              borderRadius: "6px",
+              marginBottom: "0.5rem",
+            }}
           />
           <button
             type="button"
@@ -70,7 +74,13 @@ export default function ImageUpload({
             style={{ fontSize: "0.85rem" }}
           />
           {uploading && (
-            <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.25rem" }}>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                marginTop: "0.25rem",
+              }}
+            >
               アップロード中...
             </p>
           )}

@@ -14,10 +14,9 @@ export default async function HomePage() {
   // name is always set by NextAuth (from authorize return)
   // display_name may be missing from old JWT tokens
   const displayName =
-    ((session.user as any).display_name as string) ||
-    session.user?.name ||
-    "";
-  const profileImageUrl = (session.user as any).profile_image_url as string | null;
+    ((session.user as any).display_name as string) || session.user?.name || "";
+  const profileImageUrl = (session.user as any).profile_image_url as
+    string | null;
 
   // Fetch all threads (diary thread has is_default=true)
   const { data: threads } = await supabaseAdmin.rpc("get_threads");
@@ -28,20 +27,36 @@ export default async function HomePage() {
   // Fetch diary entries (comments in the diary thread)
   let diaryEntries: ThreadComment[] = [];
   if (diaryThread) {
-    const { data } = await supabaseAdmin.rpc("get_diary_entries_with_read_status", { p_current_user_id: userId });
+    const { data } = await supabaseAdmin.rpc(
+      "get_diary_entries_with_read_status",
+      { p_current_user_id: userId }
+    );
     diaryEntries = (data as ThreadComment[]) || [];
   }
 
   // Fetch comments for each non-default thread
-  const threadsWithComments: { thread: Thread; comments: ThreadComment[] }[] = [];
+  const threadsWithComments: { thread: Thread; comments: ThreadComment[] }[] =
+    [];
   for (const t of otherThreads) {
-    const { data: comments } = await supabaseAdmin.rpc("get_thread_comments", { p_thread_id: t.id });
-    threadsWithComments.push({ thread: t, comments: (comments as ThreadComment[]) || [] });
+    const { data: comments } = await supabaseAdmin.rpc("get_thread_comments", {
+      p_thread_id: t.id,
+    });
+    threadsWithComments.push({
+      thread: t,
+      comments: (comments as ThreadComment[]) || [],
+    });
   }
 
   return (
     <div className="container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
         <h2 style={{ fontSize: "1.5rem" }}>ちひろノート</h2>
         <UserMenu displayName={displayName} profileImageUrl={profileImageUrl} />
       </div>
