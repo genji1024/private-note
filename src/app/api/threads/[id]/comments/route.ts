@@ -22,12 +22,13 @@ export async function POST(req: NextRequest) {
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { thread_id, body, image_url } = await req.json();
+  const { thread_id, title, body, image_url } = await req.json();
   const authorId = (session.user as any).id;
 
   const { error } = await supabaseAdmin.from("thread_comments").insert({
     thread_id,
     author_id: authorId,
+    title: title || "",
     body,
     image_url: image_url || null,
   });
@@ -42,7 +43,7 @@ export async function PUT(req: NextRequest) {
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id, body, image_url } = await req.json();
+  const { id, title, body, image_url } = await req.json();
   const userId = (session.user as any).id;
 
   const { data: comment } = await supabaseAdmin
@@ -57,7 +58,7 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await supabaseAdmin
     .from("thread_comments")
-    .update({ body, image_url, updated_at: new Date().toISOString() })
+    .update({ title: title || "", body, image_url, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error)

@@ -1,12 +1,6 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
-import type { Thread } from "@/lib/types";
-import NewThreadForm from "@/components/NewThreadForm";
-import ThreadItem from "@/components/ThreadItem";
-import LogoutButton from "@/components/LogoutButton";
 
+<<<<<<< HEAD
 export default async function ThreadsPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -49,3 +43,8 @@ export default async function ThreadsPage() {
     </div>
   );
 }
+=======
+export default function ThreadsPage() {
+  redirect("/");
+}
+>>>>>>> origin/main

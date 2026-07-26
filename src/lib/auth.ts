@@ -24,6 +24,8 @@ export const authOptions: NextAuthOptions = {
         return {
           id: user.id,
           name: user.display_name || user.username,
+          display_name: user.display_name || user.username,
+          profile_image_url: user.profile_image_url || null,
         } as any;
       },
     }),
@@ -34,11 +36,19 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = (user as any).id;
+      if (user) {
+        token.id = (user as any).id;
+        token.display_name = (user as any).display_name;
+        token.profile_image_url = (user as any).profile_image_url || null;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) (session.user as any).id = token.id as string;
+      if (session.user) {
+        (session.user as any).id = token.id as string;
+        (session.user as any).display_name = token.display_name as string || "";
+        (session.user as any).profile_image_url = (token.profile_image_url as string) || null;
+      }
       return session;
     },
   },
