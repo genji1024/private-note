@@ -16,7 +16,27 @@ insert into threads (title, created_by, is_default)
 select '日記', (select id from users limit 1), true
 where not exists (select 1 from threads where is_default = true);
 
--- 4. Migrate entries data to thread_comments
+-- 4. Create comment_read_status table (replaces read_status)
+--    MUST be created before the data migration DO block below
+create table if not exists comment_read_status (
+  comment_id uuid not null references thread_comments(id) on delete cascade,
+  reader_id uuid not null references users(id) on delete cascade,
+  read_at timestamptz not null default now(),
+  primary key (comment_id, reader_id)
+);
+
+alter table comment_read_status enable row level security;
+
+drop policy if exists "Anyone can read comment_read_status" on comment_read_status;
+create policy "Anyone can read comment_read_status"
+  on comment_read_status for select using (true);
+drop policy if exists "Authenticated can write comment_read_status" on comment_read_status;
+create policy "Authenticated can write comment_read_status"
+  on comment_read_status for all
+  to authenticated
+  using (true) with check (true);
+
+-- 5. Migrate entries data to thread_comments
 -- Get the default diary thread id
 do $$
 declare
@@ -60,23 +80,6 @@ begin
     where crs.comment_id = tc.id and crs.reader_id = rs.reader_id
   );
 end $$;
-
--- 5. Create comment_read_status table (replaces read_status)
-create table if not exists comment_read_status (
-  comment_id uuid not null references thread_comments(id) on delete cascade,
-  reader_id uuid not null references users(id) on delete cascade,
-  read_at timestamptz not null default now(),
-  primary key (comment_id, reader_id)
-);
-
-alter table comment_read_status enable row level security;
-
-create policy "Anyone can read comment_read_status"
-  on comment_read_status for select using (true);
-create policy "Authenticated can write comment_read_status"
-  on comment_read_status for all
-  to authenticated
-  using (true) with check (true);
 
 -- 6. Drop old tables (DISABLED for safety — keep entries/read_status as backup)
 -- To complete the migration after verifying data, uncomment:
