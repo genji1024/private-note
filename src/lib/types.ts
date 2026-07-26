@@ -23,3 +23,24 @@ export type EntryInput = {
   body: string;
   image_url?: string | null;
 };
+
+export type Thread = {
+  id: string;
+  title: string;
+  created_by: string;
+  author_name: string;
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ThreadComment = {
+  id: string;
+  thread_id: string;
+  author_id: string;
+  author_name: string;
+  body: string;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+};

@@ -17,7 +17,10 @@ export default async function HomePage() {
 
   return (
     <div className="container">
-      <h2 style={{ marginBottom: "1.5rem", fontSize: "1.5rem" }}>日記</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <h2 style={{ fontSize: "1.5rem" }}>日記</h2>
+        <a href="/threads" className="btn btn--ghost">スレッド</a>
+      </div>
       <NewEntryForm />
       {entries && entries.length > 0 ? (
         entries.map((e: Entry) => (
