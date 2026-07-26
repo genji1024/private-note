@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 
 type UserOption = {
   username: string;
-  display_name: string;
 };
 
 export default function LoginForm({ users }: { users: UserOption[] }) {
@@ -56,7 +55,7 @@ export default function LoginForm({ users }: { users: UserOption[] }) {
           >
             {users.map((u) => (
               <option key={u.username} value={u.username}>
-                {u.display_name} - {u.username}
+                {u.username}
               </option>
             ))}
           </select>
