@@ -19,7 +19,10 @@ export default async function HomePage() {
     <div className="container">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h2 style={{ fontSize: "1.5rem" }}>日記</h2>
-        <a href="/threads" className="btn btn--ghost">スレッド</a>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <a href="/threads" className="btn btn--ghost">スレッド</a>
+          <a href="/profile" className="btn btn--ghost">プロフィール</a>
+        </div>
       </div>
       <NewEntryForm />
       {entries && entries.length > 0 ? (
