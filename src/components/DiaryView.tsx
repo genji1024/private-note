@@ -1,0 +1,202 @@
+"use client";
+
+import { useState } from "react";
+import type { ThreadComment } from "@/lib/types";
+import { PencilIcon, TrashIcon } from "@/components/Icons";
+
+export default function DiaryView({
+  entries,
+  currentUserId,
+  diaryThreadId,
+}: {
+  entries: ThreadComment[];
+  currentUserId: string;
+  diaryThreadId: string;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    await fetch(`/api/threads/${diaryThreadId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ thread_id: diaryThreadId, title, body, image_url: imageUrl || null }),
+    });
+
+    setTitle("");
+    setBody("");
+    setImageUrl("");
+    setShowForm(false);
+    setSubmitting(false);
+    window.location.reload();
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setImageUrl(data.url);
+      }
+    } catch {}
+    setUploading(false);
+  };
+
+  return (
+    <>
+      {showForm ? (
+        <form className="card" onSubmit={handleSubmit}>
+          <input
+            className="input"
+            placeholder="タイトル"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <textarea
+            className="textarea"
+            placeholder="今日のこと..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+          {imageUrl ? (
+            <div style={{ marginBottom: "0.75rem" }}>
+              <img src={imageUrl} alt="プレビュー" style={{ width: "100%", borderRadius: "6px" }} />
+              <button type="button" className="btn btn--ghost" onClick={() => setImageUrl("")} style={{ fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                画像を削除
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: "0.75rem" }}>
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleUpload} disabled={uploading} style={{ fontSize: "0.85rem" }} />
+              {uploading && <p style={{ fontSize: "0.85rem", color: "#666" }}>アップロード中...</p>}
+            </div>
+          )}
+          <button className="btn" type="submit" disabled={submitting}>
+            {submitting ? "投稿中..." : "書く"}
+          </button>{" "}
+          <button className="btn btn--ghost" type="button" onClick={() => setShowForm(false)}>
+            キャンセル
+          </button>
+        </form>
+      ) : (
+        <button className="btn" onClick={() => setShowForm(true)} style={{ width: "100%", marginBottom: "1rem" }}>
+          + 日記を書く
+        </button>
+      )}
+
+      {entries.length > 0 ? (
+        entries.map((entry) => (
+          <DiaryEntry key={entry.id} entry={entry} currentUserId={currentUserId} diaryThreadId={diaryThreadId} />
+        ))
+      ) : (
+        <p style={{ color: "#999", textAlign: "center" }}>まだ日記がありません</p>
+      )}
+    </>
+  );
+}
+
+function DiaryEntry({
+  entry,
+  currentUserId,
+  diaryThreadId,
+}: {
+  entry: ThreadComment;
+  currentUserId: string;
+  diaryThreadId: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(entry.title);
+  const [body, setBody] = useState(entry.body);
+  const [imageUrl, setImageUrl] = useState(entry.image_url || "");
+  const [read, setRead] = useState(entry.read_by_me ?? false);
+
+  const isAuthor = entry.author_id === currentUserId;
+
+  const handleUpdate = async () => {
+    await fetch(`/api/threads/${diaryThreadId}/comments`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: entry.id, title, body, image_url: imageUrl || null }),
+    });
+    setEditing(false);
+    window.location.reload();
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("削除しますか？")) return;
+    await fetch(`/api/threads/${diaryThreadId}/comments`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: entry.id }),
+    });
+    window.location.reload();
+  };
+
+  const handleRead = async () => {
+    await fetch("/api/read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comment_id: entry.id }),
+    });
+    setRead(true);
+  };
+
+  return (
+    <div className="card">
+      {editing ? (
+        <>
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <textarea className="textarea" value={body} onChange={(e) => setBody(e.target.value)} />
+          <button className="btn" onClick={handleUpdate}>保存</button>{" "}
+          <button className="btn btn--ghost" onClick={() => setEditing(false)}>キャャンセル</button>
+        </>
+      ) : (
+        <>
+          <h3 style={{ marginBottom: "0.5rem" }}>{entry.title || "（無題）"}</h3>
+          <p style={{ color: "#666", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+            {entry.author_name} · {new Date(entry.created_at).toLocaleString("ja-JP")}
+          </p>
+          {entry.image_url && (
+            <img src={entry.image_url} alt={entry.title} style={{ width: "100%", borderRadius: "6px", marginBottom: "0.75rem" }} />
+          )}
+          <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
+          <div style={{ marginTop: "0.75rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+            {isAuthor ? (
+              entry.read_by_partner ? (
+                <span className="read-badge">既読</span>
+              ) : (
+                <span className="read-badge">未読</span>
+              )
+            ) : read ? (
+              <span className="read-badge">読んだ</span>
+            ) : (
+              <button className="btn btn--ghost" onClick={handleRead}>読んだ</button>
+            )}
+            {isAuthor && (
+              <>
+                <button className="btn btn--ghost" onClick={() => setEditing(true)} style={{ padding: "0.4rem", display: "flex", alignItems: "center" }} aria-label="編集">
+                  <PencilIcon />
+                </button>
+                <button className="btn btn--ghost" onClick={handleDelete} style={{ padding: "0.4rem", display: "flex", alignItems: "center" }} aria-label="削除">
+                  <TrashIcon />
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

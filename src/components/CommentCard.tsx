@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ThreadComment } from "@/lib/types";
 import MultiImageUpload, { parseImageUrls, serializeImageUrls, ImageGrid } from "@/components/MultiImageUpload";
+import { PencilIcon, TrashIcon } from "@/components/Icons";
 
 export default function CommentCard({
   comment,
@@ -61,11 +62,23 @@ export default function CommentCard({
           <ImageGrid images={displayImages} alt="添付画像" />
           <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
           {isAuthor && (
-            <div style={{ marginTop: "0.75rem", display: "flex", gap: "1rem" }}>
-              <button className="btn btn--ghost" onClick={() => setEditing(true)}>
-                編集
+            <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem" }}>
+              <button
+                className="btn btn--ghost"
+                onClick={() => setEditing(true)}
+                style={{ padding: "0.4rem", display: "flex", alignItems: "center" }}
+                aria-label="編集"
+              >
+                <PencilIcon />
               </button>
-              <button className="btn btn--ghost" onClick={handleDelete}>削除</button>
+              <button
+                className="btn btn--ghost"
+                onClick={handleDelete}
+                style={{ padding: "0.4rem", display: "flex", alignItems: "center" }}
+                aria-label="削除"
+              >
+                <TrashIcon />
+              </button>
             </div>
           )}
         </>

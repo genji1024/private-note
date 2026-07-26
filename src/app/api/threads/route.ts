@@ -37,12 +37,16 @@ export async function DELETE(req: NextRequest) {
 
   const { data: thread } = await supabaseAdmin
     .from("threads")
-    .select("created_by")
+    .select("created_by, is_default")
     .eq("id", id)
     .single();
 
   if (!thread || thread.created_by !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (thread.is_default) {
+    return NextResponse.json({ error: "Default threads cannot be deleted" }, { status: 403 });
   }
 
   const { error } = await supabaseAdmin.from("threads").delete().eq("id", id);
