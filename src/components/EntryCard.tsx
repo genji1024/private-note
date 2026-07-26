@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Entry } from "@/lib/types";
 import ImageUpload from "@/components/ImageUpload";
+import { PencilIcon, TrashIcon } from "@/components/Icons";
 
 export default function EntryCard({
   entry,
@@ -98,10 +99,22 @@ export default function EntryCard({
             )}
             {isAuthor && (
               <>
-                <button className="btn btn--ghost" onClick={() => setEditing(true)}>
-                  編集
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => setEditing(true)}
+                  style={{ padding: "0.4rem", display: "flex", alignItems: "center" }}
+                  aria-label="編集"
+                >
+                  <PencilIcon />
                 </button>
-                <button className="btn btn--ghost" onClick={handleDelete}>削除</button>
+                <button
+                  className="btn btn--ghost"
+                  onClick={handleDelete}
+                  style={{ padding: "0.4rem", display: "flex", alignItems: "center" }}
+                  aria-label="削除"
+                >
+                  <TrashIcon />
+                </button>
               </>
             )}
           </div>
