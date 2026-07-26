@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import MultiImageUpload, { serializeImageUrls } from "@/components/MultiImageUpload";
+import MultiImageUpload, {
+  serializeImageUrls,
+} from "@/components/MultiImageUpload";
 
 export default function NewCommentForm({ threadId }: { threadId: string }) {
   const [body, setBody] = useState("");
@@ -16,7 +18,11 @@ export default function NewCommentForm({ threadId }: { threadId: string }) {
     await fetch(`/api/threads/${threadId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ thread_id: threadId, body, image_url: serializeImageUrls(images) }),
+      body: JSON.stringify({
+        thread_id: threadId,
+        body,
+        image_url: serializeImageUrls(images),
+      }),
     });
 
     setBody("");

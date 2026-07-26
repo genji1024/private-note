@@ -3,7 +3,11 @@
 import { useState } from "react";
 import type { ThreadComment } from "@/lib/types";
 import { PencilIcon, TrashIcon } from "@/components/Icons";
-import MultiImageUpload, { parseImageUrls, serializeImageUrls, ImageGrid } from "@/components/MultiImageUpload";
+import MultiImageUpload, {
+  parseImageUrls,
+  serializeImageUrls,
+  ImageGrid,
+} from "@/components/MultiImageUpload";
 
 export default function DiaryView({
   entries,
@@ -27,7 +31,12 @@ export default function DiaryView({
     await fetch(`/api/threads/${diaryThreadId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ thread_id: diaryThreadId, title, body, image_url: serializeImageUrls(images) }),
+      body: JSON.stringify({
+        thread_id: diaryThreadId,
+        title,
+        body,
+        image_url: serializeImageUrls(images),
+      }),
     });
 
     setTitle("");
@@ -58,22 +67,37 @@ export default function DiaryView({
           <button className="btn" type="submit" disabled={submitting}>
             {submitting ? "投稿中..." : "書く"}
           </button>{" "}
-          <button className="btn btn--ghost" type="button" onClick={() => setShowForm(false)}>
+          <button
+            className="btn btn--ghost"
+            type="button"
+            onClick={() => setShowForm(false)}
+          >
             キャンセル
           </button>
         </form>
       ) : (
-        <button className="btn" onClick={() => setShowForm(true)} style={{ width: "100%", marginBottom: "1rem" }}>
+        <button
+          className="btn"
+          onClick={() => setShowForm(true)}
+          style={{ width: "100%", marginBottom: "1rem" }}
+        >
           + 日記を書く
         </button>
       )}
 
       {entries.length > 0 ? (
         entries.map((entry) => (
-          <DiaryEntry key={entry.id} entry={entry} currentUserId={currentUserId} diaryThreadId={diaryThreadId} />
+          <DiaryEntry
+            key={entry.id}
+            entry={entry}
+            currentUserId={currentUserId}
+            diaryThreadId={diaryThreadId}
+          />
         ))
       ) : (
-        <p style={{ color: "#999", textAlign: "center" }}>まだ日記がありません</p>
+        <p style={{ color: "#999", textAlign: "center" }}>
+          まだ日記がありません
+        </p>
       )}
     </>
   );
@@ -91,7 +115,9 @@ function DiaryEntry({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
-  const [images, setImages] = useState<string[]>(parseImageUrls(entry.image_url));
+  const [images, setImages] = useState<string[]>(
+    parseImageUrls(entry.image_url)
+  );
   const [read, setRead] = useState(entry.read_by_me ?? false);
 
   const isAuthor = entry.author_id === currentUserId;
@@ -101,7 +127,12 @@ function DiaryEntry({
     await fetch(`/api/threads/${diaryThreadId}/comments`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: entry.id, title, body, image_url: serializeImageUrls(images) }),
+      body: JSON.stringify({
+        id: entry.id,
+        title,
+        body,
+        image_url: serializeImageUrls(images),
+      }),
     });
     setEditing(false);
     window.location.reload();
@@ -130,21 +161,49 @@ function DiaryEntry({
     <div className="card">
       {editing ? (
         <>
-          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="textarea" value={body} onChange={(e) => setBody(e.target.value)} />
+          <input
+            className="input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <textarea
+            className="textarea"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
           <MultiImageUpload images={images} onUpload={setImages} />
-          <button className="btn" onClick={handleUpdate}>保存</button>{" "}
-          <button className="btn btn--ghost" onClick={() => setEditing(false)}>キャンセル</button>
+          <button className="btn" onClick={handleUpdate}>
+            保存
+          </button>{" "}
+          <button className="btn btn--ghost" onClick={() => setEditing(false)}>
+            キャンセル
+          </button>
         </>
       ) : (
         <>
-          <h3 style={{ marginBottom: "0.5rem" }}>{entry.title || "（無題）"}</h3>
-          <p style={{ color: "#666", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-            {entry.author_name} · {new Date(entry.created_at).toLocaleString("ja-JP")}
+          <h3 style={{ marginBottom: "0.5rem" }}>
+            {entry.title || "（無題）"}
+          </h3>
+          <p
+            style={{
+              color: "#666",
+              fontSize: "0.85rem",
+              marginBottom: "0.5rem",
+            }}
+          >
+            {entry.author_name} ·{" "}
+            {new Date(entry.created_at).toLocaleString("ja-JP")}
           </p>
           <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
-          <div style={{ marginTop: "0.75rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+          <div
+            style={{
+              marginTop: "0.75rem",
+              display: "flex",
+              gap: "1rem",
+              alignItems: "center",
+            }}
+          >
             {isAuthor ? (
               entry.read_by_partner ? (
                 <span className="read-badge">既読</span>
@@ -154,14 +213,34 @@ function DiaryEntry({
             ) : read ? (
               <span className="read-badge">読んだ</span>
             ) : (
-              <button className="btn btn--ghost" onClick={handleRead}>読んだ</button>
+              <button className="btn btn--ghost" onClick={handleRead}>
+                読んだ
+              </button>
             )}
             {isAuthor && (
               <>
-                <button className="btn btn--ghost" onClick={() => setEditing(true)} style={{ padding: "0.4rem", display: "flex", alignItems: "center" }} aria-label="編集">
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => setEditing(true)}
+                  style={{
+                    padding: "0.4rem",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                  aria-label="編集"
+                >
                   <PencilIcon />
                 </button>
-                <button className="btn btn--ghost" onClick={handleDelete} style={{ padding: "0.4rem", display: "flex", alignItems: "center" }} aria-label="削除">
+                <button
+                  className="btn btn--ghost"
+                  onClick={handleDelete}
+                  style={{
+                    padding: "0.4rem",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                  aria-label="削除"
+                >
                   <TrashIcon />
                 </button>
               </>
