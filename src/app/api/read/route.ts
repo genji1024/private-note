@@ -5,7 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { comment_id } = await req.json();
   const readerId = (session.user as any).id;
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
     .from("comment_read_status")
     .upsert({ comment_id, reader_id: readerId });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

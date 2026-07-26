@@ -13,11 +13,10 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const { data, error } = await supabase
-          .rpc("verify_user", {
-            p_username: credentials.username,
-            p_password: credentials.password,
-          });
+        const { data, error } = await supabase.rpc("verify_user", {
+          p_username: credentials.username,
+          p_password: credentials.password,
+        });
 
         if (error || !data || data.length === 0) return null;
 
@@ -47,8 +46,10 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id as string;
-        (session.user as any).display_name = token.display_name as string || "";
-        (session.user as any).profile_image_url = (token.profile_image_url as string) || null;
+        (session.user as any).display_name =
+          (token.display_name as string) || "";
+        (session.user as any).profile_image_url =
+          (token.profile_image_url as string) || null;
       }
       return session;
     },

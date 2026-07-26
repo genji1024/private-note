@@ -44,7 +44,14 @@ export default function LoginForm({ users }: { users: UserOption[] }) {
       )}
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "1rem" }}>
-          <label style={{ display: "block", fontSize: "0.85rem", color: "#666", marginBottom: "0.25rem" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.85rem",
+              color: "#666",
+              marginBottom: "0.25rem",
+            }}
+          >
             ユーザ
           </label>
           <select

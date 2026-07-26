@@ -48,14 +48,33 @@ export default function ProfileForm({
   return (
     <form className="card" onSubmit={handleSubmit}>
       <div style={{ marginBottom: "1rem" }}>
-        <label style={{ display: "block", fontSize: "0.85rem", color: "#666", marginBottom: "0.25rem" }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: "0.85rem",
+            color: "#666",
+            marginBottom: "0.25rem",
+          }}
+        >
           ユーザ名（変更不可）
         </label>
-        <input className="input" value={username} disabled style={{ opacity: 0.6 }} />
+        <input
+          className="input"
+          value={username}
+          disabled
+          style={{ opacity: 0.6 }}
+        />
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
-        <label style={{ display: "block", fontSize: "0.85rem", color: "#666", marginBottom: "0.25rem" }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: "0.85rem",
+            color: "#666",
+            marginBottom: "0.25rem",
+          }}
+        >
           表示名
         </label>
         <input
@@ -67,21 +86,41 @@ export default function ProfileForm({
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
-        <label style={{ display: "block", fontSize: "0.85rem", color: "#666", marginBottom: "0.25rem" }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: "0.85rem",
+            color: "#666",
+            marginBottom: "0.25rem",
+          }}
+        >
           プロフィール画像
         </label>
         {profileImage && (
           <img
             src={profileImage}
             alt="プロフィール画像"
-            style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", marginBottom: "0.5rem" }}
+            style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              marginBottom: "0.5rem",
+            }}
           />
         )}
         <ImageUpload imageUrl={profileImage} onUpload={setProfileImage} />
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
-        <label style={{ display: "block", fontSize: "0.85rem", color: "#666", marginBottom: "0.25rem" }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: "0.85rem",
+            color: "#666",
+            marginBottom: "0.25rem",
+          }}
+        >
           パスワード（変更する場合のみ入力）
         </label>
         <input
@@ -94,7 +133,12 @@ export default function ProfileForm({
       </div>
 
       {message && (
-        <p style={{ color: message.startsWith("エラー") ? "#e53e3e" : "#38a169", marginBottom: "0.75rem" }}>
+        <p
+          style={{
+            color: message.startsWith("エラー") ? "#e53e3e" : "#38a169",
+            marginBottom: "0.75rem",
+          }}
+        >
           {message}
         </p>
       )}
