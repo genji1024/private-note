@@ -89,6 +89,7 @@ end $$;
 COMMIT;
 
 -- Updated functions
+-- NOTE: DROP before CREATE because return types changed (title, is_default added)
 
 -- Replace get_entries_with_read_status with get_diary_entries_with_read_status
 create or replace function get_diary_entries_with_read_status(p_current_user_id uuid)
@@ -131,7 +132,8 @@ as $$
   order by tc.created_at desc;
 $$;
 
--- Update get_thread_comments to include title
+-- Update get_thread_comments to include title (return type changed — must drop first)
+drop function if exists get_thread_comments(uuid);
 create or replace function get_thread_comments(p_thread_id uuid)
 returns table (
   id uuid,
@@ -163,7 +165,8 @@ as $$
   order by tc.created_at asc;
 $$;
 
--- Update get_threads to include is_default
+-- Update get_threads to include is_default (return type changed — must drop first)
+drop function if exists get_threads();
 create or replace function get_threads()
 returns table (
   id uuid,
