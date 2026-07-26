@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import ImageUpload from "@/components/ImageUpload";
+import MultiImageUpload, { serializeImageUrls } from "@/components/MultiImageUpload";
 
 export default function NewEntryForm() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,12 +16,12 @@ export default function NewEntryForm() {
     await fetch("/api/entries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body, image_url: imageUrl || null }),
+      body: JSON.stringify({ title, body, image_url: serializeImageUrls(images) }),
     });
 
     setTitle("");
     setBody("");
-    setImageUrl("");
+    setImages([]);
     setSubmitting(false);
     window.location.reload();
   };
@@ -40,7 +40,7 @@ export default function NewEntryForm() {
         value={body}
         onChange={(e) => setBody(e.target.value)}
       />
-      <ImageUpload imageUrl={imageUrl} onUpload={setImageUrl} />
+      <MultiImageUpload images={images} onUpload={setImages} />
       <button className="btn" type="submit" disabled={submitting}>
         {submitting ? "投稿中..." : "書く"}
       </button>

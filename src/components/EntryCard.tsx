@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Entry } from "@/lib/types";
-import ImageUpload from "@/components/ImageUpload";
+import MultiImageUpload, { parseImageUrls, serializeImageUrls, ImageGrid } from "@/components/MultiImageUpload";
 
 export default function EntryCard({
   entry,
@@ -14,16 +14,17 @@ export default function EntryCard({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
-  const [imageUrl, setImageUrl] = useState(entry.image_url || "");
+  const [images, setImages] = useState<string[]>(parseImageUrls(entry.image_url));
   const [read, setRead] = useState(entry.read_by_me);
 
   const isAuthor = entry.author_id === currentUserId;
+  const displayImages = parseImageUrls(entry.image_url);
 
   const handleUpdate = async () => {
     await fetch("/api/entries", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: entry.id, title, body, image_url: imageUrl || null }),
+      body: JSON.stringify({ id: entry.id, title, body, image_url: serializeImageUrls(images) }),
     });
     setEditing(false);
     window.location.reload();
@@ -62,7 +63,7 @@ export default function EntryCard({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
-          <ImageUpload imageUrl={imageUrl} onUpload={setImageUrl} />
+          <MultiImageUpload images={images} onUpload={setImages} />
           <button className="btn" onClick={handleUpdate}>保存</button>{" "}
           <button className="btn btn--ghost" onClick={() => setEditing(false)}>
             キャンセル
@@ -74,13 +75,7 @@ export default function EntryCard({
           <p style={{ color: "#666", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
             {entry.author_name} · {new Date(entry.created_at).toLocaleString("ja-JP")}
           </p>
-          {entry.image_url && (
-            <img
-              src={entry.image_url}
-              alt={entry.title}
-              style={{ width: "100%", borderRadius: "6px", marginBottom: "0.75rem" }}
-            />
-          )}
+          <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
           <div style={{ marginTop: "0.75rem", display: "flex", gap: "1rem", alignItems: "center" }}>
             {isAuthor ? (
