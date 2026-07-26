@@ -11,7 +11,12 @@ export default async function HomePage() {
   if (!session) redirect("/login");
 
   const userId = (session.user as any).id as string;
-  const displayName = (session.user as any).display_name as string || "";
+  // name is always set by NextAuth (from authorize return)
+  // display_name may be missing from old JWT tokens
+  const displayName =
+    ((session.user as any).display_name as string) ||
+    session.user?.name ||
+    "";
   const profileImageUrl = (session.user as any).profile_image_url as string | null;
 
   // Fetch all threads (diary thread has is_default=true)
