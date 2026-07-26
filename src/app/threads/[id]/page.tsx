@@ -18,7 +18,11 @@ export default async function ThreadDetailPage({
   const threadId = params.id;
 
   const [{ data: thread }, { data: comments }] = await Promise.all([
-    supabaseAdmin.from("threads").select("title, created_by").eq("id", threadId).single(),
+    supabaseAdmin
+      .from("threads")
+      .select("title, created_by")
+      .eq("id", threadId)
+      .single(),
     supabaseAdmin.rpc("get_thread_comments", { p_thread_id: threadId }),
   ]);
 
@@ -26,9 +30,18 @@ export default async function ThreadDetailPage({
 
   return (
     <div className="container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
         <h2 style={{ fontSize: "1.5rem" }}>{thread.title}</h2>
-        <a href="/threads" className="btn btn--ghost">スレッド一覧</a>
+        <a href="/threads" className="btn btn--ghost">
+          スレッド一覧
+        </a>
       </div>
       <NewCommentForm threadId={threadId} />
       {comments && comments.length > 0 ? (
@@ -36,7 +49,9 @@ export default async function ThreadDetailPage({
           <CommentCard key={c.id} comment={c} currentUserId={userId} />
         ))
       ) : (
-        <p style={{ color: "#999", textAlign: "center" }}>まだコメントがありません</p>
+        <p style={{ color: "#999", textAlign: "center" }}>
+          まだコメントがありません
+        </p>
       )}
     </div>
   );

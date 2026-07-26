@@ -16,7 +16,11 @@ export default function NewCommentForm({ threadId }: { threadId: string }) {
     await fetch(`/api/threads/${threadId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ thread_id: threadId, body, image_url: imageUrl || null }),
+      body: JSON.stringify({
+        thread_id: threadId,
+        body,
+        image_url: imageUrl || null,
+      }),
     });
 
     setBody("");

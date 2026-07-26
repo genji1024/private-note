@@ -23,7 +23,12 @@ export default function EntryCard({
     await fetch("/api/entries", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: entry.id, title, body, image_url: imageUrl || null }),
+      body: JSON.stringify({
+        id: entry.id,
+        title,
+        body,
+        image_url: imageUrl || null,
+      }),
     });
     setEditing(false);
     window.location.reload();
@@ -63,26 +68,48 @@ export default function EntryCard({
             onChange={(e) => setBody(e.target.value)}
           />
           <ImageUpload imageUrl={imageUrl} onUpload={setImageUrl} />
-          <button className="btn" onClick={handleUpdate}>保存</button>{" "}
+          <button className="btn" onClick={handleUpdate}>
+            保存
+          </button>{" "}
           <button className="btn btn--ghost" onClick={() => setEditing(false)}>
             キャンセル
           </button>
         </>
       ) : (
         <>
-          <h3 style={{ marginBottom: "0.5rem" }}>{entry.title || "（無題）"}</h3>
-          <p style={{ color: "#666", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-            {entry.author_name} · {new Date(entry.created_at).toLocaleString("ja-JP")}
+          <h3 style={{ marginBottom: "0.5rem" }}>
+            {entry.title || "（無題）"}
+          </h3>
+          <p
+            style={{
+              color: "#666",
+              fontSize: "0.85rem",
+              marginBottom: "0.5rem",
+            }}
+          >
+            {entry.author_name} ·{" "}
+            {new Date(entry.created_at).toLocaleString("ja-JP")}
           </p>
           {entry.image_url && (
             <img
               src={entry.image_url}
               alt={entry.title}
-              style={{ width: "100%", borderRadius: "6px", marginBottom: "0.75rem" }}
+              style={{
+                width: "100%",
+                borderRadius: "6px",
+                marginBottom: "0.75rem",
+              }}
             />
           )}
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
-          <div style={{ marginTop: "0.75rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+          <div
+            style={{
+              marginTop: "0.75rem",
+              display: "flex",
+              gap: "1rem",
+              alignItems: "center",
+            }}
+          >
             {isAuthor ? (
               entry.read_by_partner ? (
                 <span className="read-badge">既読</span>
@@ -98,10 +125,15 @@ export default function EntryCard({
             )}
             {isAuthor && (
               <>
-                <button className="btn btn--ghost" onClick={() => setEditing(true)}>
+                <button
+                  className="btn btn--ghost"
+                  onClick={() => setEditing(true)}
+                >
                   編集
                 </button>
-                <button className="btn btn--ghost" onClick={handleDelete}>削除</button>
+                <button className="btn btn--ghost" onClick={handleDelete}>
+                  削除
+                </button>
               </>
             )}
           </div>

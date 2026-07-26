@@ -6,24 +6,34 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint --max-warnings 0",
+    "lint:fix": "next lint --fix --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
     "db:push": "supabase db push",
     "db:seed": "tsx supabase/seed.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.4.0",
+    "@supabase/supabase-js": "^2.45.0",
     "next": "14.2.5",
+    "next-auth": "^4.24.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "next-auth": "^4.24.7",
-    "@supabase/supabase-js": "^2.45.0",
-    "@supabase/ssr": "^0.4.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5",
-    "tsx": "^4.16.0"
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.5",
+    "eslint-config-prettier": "^9.1.2",
+    "prettier": "^3.9.6",
+    "tsx": "^4.16.0",
+    "typescript": "^5"
   }
 }

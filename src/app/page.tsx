@@ -13,16 +13,29 @@ export default async function HomePage() {
 
   const userId = (session.user as any).id as string;
 
-  const { data: entries } = await supabaseAdmin
-    .rpc("get_entries_with_read_status", { p_current_user_id: userId });
+  const { data: entries } = await supabaseAdmin.rpc(
+    "get_entries_with_read_status",
+    { p_current_user_id: userId }
+  );
 
   return (
     <div className="container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
         <h2 style={{ fontSize: "1.5rem" }}>日記</h2>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <a href="/threads" className="btn btn--ghost">スレッド</a>
-          <a href="/profile" className="btn btn--ghost">プロフィール</a>
+          <a href="/threads" className="btn btn--ghost">
+            スレッド
+          </a>
+          <a href="/profile" className="btn btn--ghost">
+            プロフィール
+          </a>
           <LogoutButton />
         </div>
       </div>
@@ -32,7 +45,9 @@ export default async function HomePage() {
           <EntryCard key={e.id} entry={e} currentUserId={userId} />
         ))
       ) : (
-        <p style={{ color: "#999", textAlign: "center" }}>まだ日記がありません</p>
+        <p style={{ color: "#999", textAlign: "center" }}>
+          まだ日記がありません
+        </p>
       )}
     </div>
   );
