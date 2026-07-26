@@ -194,3 +194,23 @@ as $$
   join users u on u.id = t.created_by
   order by t.is_default desc, t.created_at desc;
 $$;
+
+-- Update verify_user to include profile_image_url (return type changed — must drop first)
+drop function if exists verify_user(text, text);
+create or replace function verify_user(
+  p_username text,
+  p_password text
+) returns table (
+  id uuid,
+  username text,
+  display_name text,
+  profile_image_url text
+)
+language sql
+security definer
+as $$
+  select id, username, display_name, profile_image_url
+  from users
+  where username = p_username
+    and password_hash = crypt(p_password, password_hash);
+$$;
