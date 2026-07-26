@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import ProfileForm from "@/components/ProfileForm";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -22,7 +23,10 @@ export default async function ProfilePage() {
     <div className="container">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h2 style={{ fontSize: "1.5rem" }}>プロフィール設定</h2>
-        <a href="/" className="btn btn--ghost">戻る</a>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <a href="/" className="btn btn--ghost">戻る</a>
+          <LogoutButton />
+        </div>
       </div>
       <ProfileForm
         initialDisplayName={user.display_name}
