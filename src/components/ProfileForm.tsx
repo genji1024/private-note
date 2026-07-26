@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function ProfileForm({
   initialDisplayName,
@@ -67,21 +68,16 @@ export default function ProfileForm({
 
       <div style={{ marginBottom: "1rem" }}>
         <label style={{ display: "block", fontSize: "0.85rem", color: "#666", marginBottom: "0.25rem" }}>
-          プロフィール画像URL
+          プロフィール画像
         </label>
-        <input
-          className="input"
-          value={profileImage}
-          onChange={(e) => setProfileImage(e.target.value)}
-          placeholder="画像URL（任意）"
-        />
         {profileImage && (
           <img
             src={profileImage}
             alt="プロフィール画像"
-            style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", marginTop: "0.5rem" }}
+            style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover", marginBottom: "0.5rem" }}
           />
         )}
+        <ImageUpload imageUrl={profileImage} onUpload={setProfileImage} />
       </div>
 
       <div style={{ marginBottom: "1rem" }}>

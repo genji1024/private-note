@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function NewCommentForm({ threadId }: { threadId: string }) {
   const [body, setBody] = useState("");
@@ -32,12 +33,7 @@ export default function NewCommentForm({ threadId }: { threadId: string }) {
         value={body}
         onChange={(e) => setBody(e.target.value)}
       />
-      <input
-        className="input"
-        placeholder="画像URL（任意）"
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-      />
+      <ImageUpload imageUrl={imageUrl} onUpload={setImageUrl} />
       <button className="btn" type="submit" disabled={submitting}>
         {submitting ? "投稿中..." : "コメントする"}
       </button>

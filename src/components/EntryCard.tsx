@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Entry } from "@/lib/types";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function EntryCard({
   entry,
@@ -13,6 +14,7 @@ export default function EntryCard({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
+  const [imageUrl, setImageUrl] = useState(entry.image_url || "");
   const [read, setRead] = useState(entry.read_by_me);
 
   const isAuthor = entry.author_id === currentUserId;
@@ -21,7 +23,7 @@ export default function EntryCard({
     await fetch("/api/entries", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: entry.id, title, body, image_url: entry.image_url }),
+      body: JSON.stringify({ id: entry.id, title, body, image_url: imageUrl || null }),
     });
     setEditing(false);
     window.location.reload();
@@ -60,6 +62,7 @@ export default function EntryCard({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
+          <ImageUpload imageUrl={imageUrl} onUpload={setImageUrl} />
           <button className="btn" onClick={handleUpdate}>保存</button>{" "}
           <button className="btn btn--ghost" onClick={() => setEditing(false)}>
             キャンセル
