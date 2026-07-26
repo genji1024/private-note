@@ -9,7 +9,7 @@ create table if not exists threads (
   updated_at timestamptz not null default now()
 );
 
-create index idx_threads_created_at on threads (created_at desc);
+create index if not exists idx_threads_created_at on threads (created_at desc);
 
 create table if not exists thread_comments (
   id uuid primary key default gen_random_uuid(),
@@ -21,7 +21,7 @@ create table if not exists thread_comments (
   updated_at timestamptz not null default now()
 );
 
-create index idx_thread_comments_thread_id on thread_comments (thread_id, created_at desc);
+create index if not exists idx_thread_comments_thread_id on thread_comments (thread_id, created_at desc);
 
 -- RLS
 alter table threads enable row level security;
