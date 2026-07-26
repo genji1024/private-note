@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import type { ThreadComment } from "@/lib/types";
+import MultiImageUpload, {
+  parseImageUrls,
+  serializeImageUrls,
+  ImageGrid,
+} from "@/components/MultiImageUpload";
 import { PencilIcon, TrashIcon } from "@/components/Icons";
 
 export default function CommentCard({
@@ -13,8 +18,12 @@ export default function CommentCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [body, setBody] = useState(comment.body);
+  const [images, setImages] = useState<string[]>(
+    parseImageUrls(comment.image_url)
+  );
 
   const isAuthor = comment.author_id === currentUserId;
+  const displayImages = parseImageUrls(comment.image_url);
 
   const handleUpdate = async () => {
     await fetch(`/api/threads/${comment.thread_id}/comments`, {
@@ -23,7 +32,7 @@ export default function CommentCard({
       body: JSON.stringify({
         id: comment.id,
         body,
-        image_url: comment.image_url,
+        image_url: serializeImageUrls(images),
       }),
     });
     setEditing(false);
@@ -49,6 +58,7 @@ export default function CommentCard({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
+          <MultiImageUpload images={images} onUpload={setImages} />
           <button className="btn" onClick={handleUpdate}>
             保存
           </button>{" "}
@@ -68,17 +78,7 @@ export default function CommentCard({
             {comment.author_name} ·{" "}
             {new Date(comment.created_at).toLocaleString("ja-JP")}
           </p>
-          {comment.image_url && (
-            <img
-              src={comment.image_url}
-              alt="添付画像"
-              style={{
-                width: "100%",
-                borderRadius: "6px",
-                marginBottom: "0.75rem",
-              }}
-            />
-          )}
+          <ImageGrid images={displayImages} alt="添付画像" />
           <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
           {isAuthor && (
             <div

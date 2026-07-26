@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import ImageUpload from "@/components/ImageUpload";
+import MultiImageUpload, {
+  serializeImageUrls,
+} from "@/components/MultiImageUpload";
 
 export default function NewCommentForm({ threadId }: { threadId: string }) {
   const [body, setBody] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,12 +21,12 @@ export default function NewCommentForm({ threadId }: { threadId: string }) {
       body: JSON.stringify({
         thread_id: threadId,
         body,
-        image_url: imageUrl || null,
+        image_url: serializeImageUrls(images),
       }),
     });
 
     setBody("");
-    setImageUrl("");
+    setImages([]);
     setSubmitting(false);
     window.location.reload();
   };
@@ -37,7 +39,7 @@ export default function NewCommentForm({ threadId }: { threadId: string }) {
         value={body}
         onChange={(e) => setBody(e.target.value)}
       />
-      <ImageUpload imageUrl={imageUrl} onUpload={setImageUrl} />
+      <MultiImageUpload images={images} onUpload={setImages} />
       <button className="btn" type="submit" disabled={submitting}>
         {submitting ? "投稿中..." : "コメントする"}
       </button>

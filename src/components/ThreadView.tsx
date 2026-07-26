@@ -3,6 +3,11 @@
 import { useState } from "react";
 import type { ThreadComment } from "@/lib/types";
 import { PencilIcon, TrashIcon } from "@/components/Icons";
+import MultiImageUpload, {
+  parseImageUrls,
+  serializeImageUrls,
+  ImageGrid,
+} from "@/components/MultiImageUpload";
 
 export default function ThreadView({
   comments,
@@ -15,8 +20,7 @@ export default function ThreadView({
 }) {
   const [showForm, setShowForm] = useState(false);
   const [body, setBody] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,34 +34,15 @@ export default function ThreadView({
       body: JSON.stringify({
         thread_id: threadId,
         body,
-        image_url: imageUrl || null,
+        image_url: serializeImageUrls(images),
       }),
     });
 
     setBody("");
-    setImageUrl("");
+    setImages([]);
     setShowForm(false);
     setSubmitting(false);
     window.location.reload();
-  };
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setImageUrl(data.url);
-      }
-    } catch {}
-    setUploading(false);
   };
 
   return (
@@ -70,38 +55,7 @@ export default function ThreadView({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
-          {imageUrl ? (
-            <div style={{ marginBottom: "0.75rem" }}>
-              <img
-                src={imageUrl}
-                alt="プレビュー"
-                style={{ width: "100%", borderRadius: "6px" }}
-              />
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => setImageUrl("")}
-                style={{ fontSize: "0.85rem" }}
-              >
-                画像を削除
-              </button>
-            </div>
-          ) : (
-            <div style={{ marginBottom: "0.75rem" }}>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handleUpload}
-                disabled={uploading}
-                style={{ fontSize: "0.85rem" }}
-              />
-              {uploading && (
-                <p style={{ fontSize: "0.85rem", color: "#666" }}>
-                  アップロード中...
-                </p>
-              )}
-            </div>
-          )}
+          <MultiImageUpload images={images} onUpload={setImages} />
           <button className="btn" type="submit" disabled={submitting}>
             {submitting ? "投稿中..." : "コメントする"}
           </button>{" "}
@@ -152,8 +106,12 @@ function ThreadCommentCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [body, setBody] = useState(comment.body);
+  const [images, setImages] = useState<string[]>(
+    parseImageUrls(comment.image_url)
+  );
 
   const isAuthor = comment.author_id === currentUserId;
+  const displayImages = parseImageUrls(comment.image_url);
 
   const handleUpdate = async () => {
     await fetch(`/api/threads/${threadId}/comments`, {
@@ -162,7 +120,7 @@ function ThreadCommentCard({
       body: JSON.stringify({
         id: comment.id,
         body,
-        image_url: comment.image_url,
+        image_url: serializeImageUrls(images),
       }),
     });
     setEditing(false);
@@ -188,6 +146,7 @@ function ThreadCommentCard({
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
+          <MultiImageUpload images={images} onUpload={setImages} />
           <button className="btn" onClick={handleUpdate}>
             保存
           </button>{" "}
@@ -207,17 +166,7 @@ function ThreadCommentCard({
             {comment.author_name} ·{" "}
             {new Date(comment.created_at).toLocaleString("ja-JP")}
           </p>
-          {comment.image_url && (
-            <img
-              src={comment.image_url}
-              alt="添付画像"
-              style={{
-                width: "100%",
-                borderRadius: "6px",
-                marginBottom: "0.75rem",
-              }}
-            />
-          )}
+          <ImageGrid images={displayImages} alt="添付画像" />
           <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
           {isAuthor && (
             <div
