@@ -51,7 +51,10 @@ export async function DELETE(req: NextRequest) {
   }
 
   if (thread.is_default) {
-    return NextResponse.json({ error: "Default threads cannot be deleted" }, { status: 403 });
+    return NextResponse.json(
+      { error: "Default threads cannot be deleted" },
+      { status: 403 }
+    );
   }
 
   const { error } = await supabaseAdmin.from("threads").delete().eq("id", id);

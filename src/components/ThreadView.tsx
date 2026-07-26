@@ -27,7 +27,11 @@ export default function ThreadView({
     await fetch(`/api/threads/${threadId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ thread_id: threadId, body, image_url: imageUrl || null }),
+      body: JSON.stringify({
+        thread_id: threadId,
+        body,
+        image_url: imageUrl || null,
+      }),
     });
 
     setBody("");
@@ -44,7 +48,10 @@ export default function ThreadView({
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       if (res.ok) {
         const data = await res.json();
         setImageUrl(data.url);
@@ -65,36 +72,70 @@ export default function ThreadView({
           />
           {imageUrl ? (
             <div style={{ marginBottom: "0.75rem" }}>
-              <img src={imageUrl} alt="プレビュー" style={{ width: "100%", borderRadius: "6px" }} />
-              <button type="button" className="btn btn--ghost" onClick={() => setImageUrl("")} style={{ fontSize: "0.85rem" }}>
+              <img
+                src={imageUrl}
+                alt="プレビュー"
+                style={{ width: "100%", borderRadius: "6px" }}
+              />
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => setImageUrl("")}
+                style={{ fontSize: "0.85rem" }}
+              >
                 画像を削除
               </button>
             </div>
           ) : (
             <div style={{ marginBottom: "0.75rem" }}>
-              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={handleUpload} disabled={uploading} style={{ fontSize: "0.85rem" }} />
-              {uploading && <p style={{ fontSize: "0.85rem", color: "#666" }}>アップロード中...</p>}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleUpload}
+                disabled={uploading}
+                style={{ fontSize: "0.85rem" }}
+              />
+              {uploading && (
+                <p style={{ fontSize: "0.85rem", color: "#666" }}>
+                  アップロード中...
+                </p>
+              )}
             </div>
           )}
           <button className="btn" type="submit" disabled={submitting}>
             {submitting ? "投稿中..." : "コメントする"}
           </button>{" "}
-          <button className="btn btn--ghost" type="button" onClick={() => setShowForm(false)}>
+          <button
+            className="btn btn--ghost"
+            type="button"
+            onClick={() => setShowForm(false)}
+          >
             キャンセル
           </button>
         </form>
       ) : (
-        <button className="btn" onClick={() => setShowForm(true)} style={{ width: "100%", marginBottom: "1rem" }}>
+        <button
+          className="btn"
+          onClick={() => setShowForm(true)}
+          style={{ width: "100%", marginBottom: "1rem" }}
+        >
           + コメントする
         </button>
       )}
 
       {comments.length > 0 ? (
         comments.map((comment) => (
-          <ThreadCommentCard key={comment.id} comment={comment} currentUserId={currentUserId} threadId={threadId} />
+          <ThreadCommentCard
+            key={comment.id}
+            comment={comment}
+            currentUserId={currentUserId}
+            threadId={threadId}
+          />
         ))
       ) : (
-        <p style={{ color: "#999", textAlign: "center" }}>まだコメントがありません</p>
+        <p style={{ color: "#999", textAlign: "center" }}>
+          まだコメントがありません
+        </p>
       )}
     </>
   );
@@ -118,7 +159,11 @@ function ThreadCommentCard({
     await fetch(`/api/threads/${threadId}/comments`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: comment.id, body, image_url: comment.image_url }),
+      body: JSON.stringify({
+        id: comment.id,
+        body,
+        image_url: comment.image_url,
+      }),
     });
     setEditing(false);
     window.location.reload();
@@ -138,25 +183,68 @@ function ThreadCommentCard({
     <div className="card">
       {editing ? (
         <>
-          <textarea className="textarea" value={body} onChange={(e) => setBody(e.target.value)} />
-          <button className="btn" onClick={handleUpdate}>保存</button>{" "}
-          <button className="btn btn--ghost" onClick={() => setEditing(false)}>キャンセル</button>
+          <textarea
+            className="textarea"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+          <button className="btn" onClick={handleUpdate}>
+            保存
+          </button>{" "}
+          <button className="btn btn--ghost" onClick={() => setEditing(false)}>
+            キャンセル
+          </button>
         </>
       ) : (
         <>
-          <p style={{ color: "#666", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-            {comment.author_name} · {new Date(comment.created_at).toLocaleString("ja-JP")}
+          <p
+            style={{
+              color: "#666",
+              fontSize: "0.85rem",
+              marginBottom: "0.5rem",
+            }}
+          >
+            {comment.author_name} ·{" "}
+            {new Date(comment.created_at).toLocaleString("ja-JP")}
           </p>
           {comment.image_url && (
-            <img src={comment.image_url} alt="添付画像" style={{ width: "100%", borderRadius: "6px", marginBottom: "0.75rem" }} />
+            <img
+              src={comment.image_url}
+              alt="添付画像"
+              style={{
+                width: "100%",
+                borderRadius: "6px",
+                marginBottom: "0.75rem",
+              }}
+            />
           )}
           <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
           {isAuthor && (
-            <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem" }}>
-              <button className="btn btn--ghost" onClick={() => setEditing(true)} style={{ padding: "0.4rem", display: "flex", alignItems: "center" }} aria-label="編集">
+            <div
+              style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem" }}
+            >
+              <button
+                className="btn btn--ghost"
+                onClick={() => setEditing(true)}
+                style={{
+                  padding: "0.4rem",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                aria-label="編集"
+              >
                 <PencilIcon />
               </button>
-              <button className="btn btn--ghost" onClick={handleDelete} style={{ padding: "0.4rem", display: "flex", alignItems: "center" }} aria-label="削除">
+              <button
+                className="btn btn--ghost"
+                onClick={handleDelete}
+                style={{
+                  padding: "0.4rem",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                aria-label="削除"
+              >
                 <TrashIcon />
               </button>
             </div>

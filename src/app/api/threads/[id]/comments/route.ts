@@ -58,7 +58,12 @@ export async function PUT(req: NextRequest) {
 
   const { error } = await supabaseAdmin
     .from("thread_comments")
-    .update({ title: title || "", body, image_url, updated_at: new Date().toISOString() })
+    .update({
+      title: title || "",
+      body,
+      image_url,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id);
 
   if (error)

@@ -23,11 +23,22 @@ export default function ThreadListItem({
   };
 
   return (
-    <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div
+      className="card"
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
       <div>
-        <h3 style={{ marginBottom: "0.25rem", fontSize: "1.1rem" }}>{thread.title}</h3>
+        <h3 style={{ marginBottom: "0.25rem", fontSize: "1.1rem" }}>
+          {thread.title}
+        </h3>
         <p style={{ color: "#666", fontSize: "0.85rem" }}>
-          {thread.author_name} · {new Date(thread.created_at).toLocaleString("ja-JP")} · コメント {thread.comment_count}件
+          {thread.author_name} ·{" "}
+          {new Date(thread.created_at).toLocaleString("ja-JP")} · コメント{" "}
+          {thread.comment_count}件
         </p>
       </div>
       {isCreator && !thread.is_default && (
