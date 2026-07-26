@@ -31,6 +31,8 @@ export default function UserMenu({
     router.refresh();
   };
 
+  const initial = displayName.charAt(0) || "?";
+
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
@@ -59,7 +61,7 @@ export default function UserMenu({
           />
         ) : (
           <span style={{ fontSize: "0.85rem", color: "#666" }}>
-            {displayName.charAt(0)}
+            {initial}
           </span>
         )}
       </button>
