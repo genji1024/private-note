@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import MultiImageUpload, { serializeImageUrls } from "@/components/MultiImageUpload";
+import MultiImageUpload, {
+  serializeImageUrls,
+} from "@/components/MultiImageUpload";
 
 export default function NewEntryForm() {
   const [title, setTitle] = useState("");
@@ -16,7 +18,11 @@ export default function NewEntryForm() {
     await fetch("/api/entries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body, image_url: serializeImageUrls(images) }),
+      body: JSON.stringify({
+        title,
+        body,
+        image_url: serializeImageUrls(images),
+      }),
     });
 
     setTitle("");

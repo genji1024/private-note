@@ -69,7 +69,11 @@ export default function MultiImageUpload({
           style={{
             display: "grid",
             gridTemplateColumns:
-              images.length === 2 ? "1fr 1fr" : images.length >= 3 ? "1fr 1fr" : "1fr",
+              images.length === 2
+                ? "1fr 1fr"
+                : images.length >= 3
+                  ? "1fr 1fr"
+                  : "1fr",
             gap: "0.5rem",
             marginBottom: "0.5rem",
           }}
@@ -125,11 +129,19 @@ export default function MultiImageUpload({
             style={{ fontSize: "0.85rem" }}
           />
           {uploading && (
-            <p style={{ fontSize: "0.85rem", color: "#666", marginTop: "0.25rem" }}>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                marginTop: "0.25rem",
+              }}
+            >
               アップロード中...
             </p>
           )}
-          <p style={{ fontSize: "0.8rem", color: "#999", marginTop: "0.25rem" }}>
+          <p
+            style={{ fontSize: "0.8rem", color: "#999", marginTop: "0.25rem" }}
+          >
             最大{MAX_IMAGES}枚まで（残り{MAX_IMAGES - images.length}枚）
           </p>
         </div>
