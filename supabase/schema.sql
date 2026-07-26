@@ -19,8 +19,8 @@ create table if not exists entries (
   updated_at timestamptz not null default now()
 );
 
-create index idx_entries_created_at on entries (created_at desc);
-create index idx_entries_author_id on entries (author_id);
+create index if not exists idx_entries_created_at on entries (created_at desc);
+create index if not exists idx_entries_author_id on entries (author_id);
 
 create table if not exists read_status (
   entry_id uuid not null references entries(id) on delete cascade,
