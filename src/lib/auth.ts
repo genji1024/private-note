@@ -21,6 +21,14 @@ export const authOptions: NextAuthOptions = {
         if (error || !data || data.length === 0) return null;
 
         const user = data[0];
+
+        await supabase
+          .from("users")
+          .update({
+            last_login_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
         return {
           id: user.id,
           name: user.username,

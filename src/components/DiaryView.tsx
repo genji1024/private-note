@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { ThreadComment } from "@/lib/types";
+import type { ThreadComment, UserProfile } from "@/lib/types";
 import { PencilIcon, TrashIcon } from "@/components/Icons";
+import ProfilePopup from "@/components/ProfilePopup";
 import MultiImageUpload, {
   parseImageUrls,
   serializeImageUrls,
@@ -16,6 +17,7 @@ export default function DiaryView({
   statusUnread,
   statusRead,
   statusDone,
+  userProfiles,
 }: {
   entries: ThreadComment[];
   currentUserId: string;
@@ -23,6 +25,7 @@ export default function DiaryView({
   statusUnread: string;
   statusRead: string;
   statusDone: string;
+  userProfiles: Record<string, UserProfile>;
 }) {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -101,6 +104,7 @@ export default function DiaryView({
             statusUnread={statusUnread}
             statusRead={statusRead}
             statusDone={statusDone}
+            userProfiles={userProfiles}
           />
         ))
       ) : (
@@ -119,6 +123,7 @@ function DiaryEntry({
   statusUnread,
   statusRead,
   statusDone,
+  userProfiles,
 }: {
   entry: ThreadComment;
   currentUserId: string;
@@ -126,7 +131,10 @@ function DiaryEntry({
   statusUnread: string;
   statusRead: string;
   statusDone: string;
+  userProfiles: Record<string, UserProfile>;
 }) {
+  const [profilePopup, setProfilePopup] = useState(false);
+  const profile = userProfiles[entry.author_id];
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [body, setBody] = useState(entry.body);
@@ -199,16 +207,50 @@ function DiaryEntry({
           <h3 style={{ marginBottom: "0.5rem" }}>
             {entry.title || "（無題）"}
           </h3>
-          <p
+          <div
             style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
               color: "#666",
               fontSize: "0.85rem",
               marginBottom: "0.5rem",
             }}
           >
-            {entry.author_name} ·{" "}
-            {new Date(entry.created_at).toLocaleString("ja-JP")}
-          </p>
+            {profile && (
+              <img
+                src={profile.profile_image_url || ""}
+                alt={profile.display_name}
+                onClick={() => setProfilePopup(true)}
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  background: "#e2e8f0",
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            )}
+            <span
+              onClick={() => setProfilePopup(true)}
+              style={{ cursor: "pointer" }}
+            >
+              {entry.author_name}
+            </span>
+            {" · "}
+            <span>{new Date(entry.created_at).toLocaleString("ja-JP")}</span>
+          </div>
+          {profilePopup && profile && (
+            <ProfilePopup
+              user={profile}
+              onClose={() => setProfilePopup(false)}
+            />
+          )}
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
           <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <div
