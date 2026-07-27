@@ -17,6 +17,7 @@ description: PR 作成・レビュー・CI 検証のワークフロー
 ## レビュー依頼時のコメントフォーマット
 
 レビュー依頼コメントには必ず以下を含める:
+
 - lint 結果（`npm run lint`）
 - format:check 結果（`npm run format:check`）
 - typecheck 結果（`npm run typecheck`）

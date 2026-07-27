@@ -11,21 +11,23 @@ g-ohara は複数PR検証で同じDBにSQLを再実行する。すべての SQL 
 
 ## パターン一覧
 
-| パターン | 修正 |
-|----------|------|
-| `CREATE INDEX idx ON t (...)` | → `CREATE INDEX IF NOT EXISTS idx ON t (...)` |
-| `CREATE POLICY "p" ON t ...` | → `DROP POLICY IF EXISTS "p" ON t; CREATE POLICY "p" ON t ...` |
-| 戻り型変更 `CREATE OR REPLACE FUNCTION` | → `DROP FUNCTION IF EXISTS f(...); CREATE OR REPLACE FUNCTION f(...)` |
-| `CREATE TABLE` より後にそれを参照するDOブロック | → CREATE TABLE を先に配置 |
+| パターン                                        | 修正                                                                  |
+| ----------------------------------------------- | --------------------------------------------------------------------- |
+| `CREATE INDEX idx ON t (...)`                   | → `CREATE INDEX IF NOT EXISTS idx ON t (...)`                         |
+| `CREATE POLICY "p" ON t ...`                    | → `DROP POLICY IF EXISTS "p" ON t; CREATE POLICY "p" ON t ...`        |
+| 戻り型変更 `CREATE OR REPLACE FUNCTION`         | → `DROP FUNCTION IF EXISTS f(...); CREATE OR REPLACE FUNCTION f(...)` |
+| `CREATE TABLE` より後にそれを参照するDOブロック | → CREATE TABLE を先に配置                                             |
 
 ## 実装例
 
 ### インデックス
+
 ```sql
 CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
 ```
 
 ### RLS ポリシー
+
 ```sql
 DROP POLICY IF EXISTS "Users can read all entries" ON entries;
 CREATE POLICY "Users can read all entries" ON entries
@@ -33,6 +35,7 @@ CREATE POLICY "Users can read all entries" ON entries
 ```
 
 ### 戻り型変更のある関数
+
 ```sql
 DROP FUNCTION IF EXISTS verify_user(text, text);
 CREATE OR REPLACE FUNCTION verify_user(p_username text, p_password text)
