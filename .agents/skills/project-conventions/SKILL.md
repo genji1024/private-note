@@ -1,3 +1,8 @@
+---
+name: project-conventions
+description: プロジェクトの規約・設計方針
+---
+
 # Project Conventions
 
 ## 技術スタック

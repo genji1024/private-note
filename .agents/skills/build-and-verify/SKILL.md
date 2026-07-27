@@ -1,3 +1,8 @@
+---
+name: build-and-verify
+description: ビルド・動作確認の手順
+---
+
 # Build and Verify
 
 ## ビルド手順
@@ -18,14 +23,25 @@ npm run build         # Next.js ビルド
 
 ```bash
 npm run lint          # ESLint（--max-warnings 0 付き）
-npm run format:check   # Prettier フォーマットチェック
-npm run format         # Prettier フォーマット適用
-npm run typecheck      # tsc --noEmit
+npm run format:check  # Prettier フォーマットチェック
+npm run format        # Prettier フォーマット適用
+npm run typecheck     # tsc --noEmit
 ```
+
+## CI チェック
+
+コード変更後、プッシュ前に以下の4ステップを**すべて**ローカルで実行:
+
+1. `npm run lint --max-warnings 0`
+2. `npm run format:check`
+3. `npm run typecheck`
+4. `npm run build`
+
+CI のステータスも必ず確認する — `pull_request_read(method="get_check_runs")` を使用。
 
 ## 動作確認（E2E）
 
-1. Supabase SQL を全て実行（`supabase-setup.md` 参照）
+1. Supabase SQL を全て実行（`supabase-setup` スキル参照）
 2. `.env.local` を設定
 3. `npm run dev` で開発サーバー起動
 4. http://localhost:3000 にアクセス

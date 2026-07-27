@@ -1,3 +1,8 @@
+---
+name: nextauth-credentials
+description: NextAuth Credentials Provider の実装パターン
+---
+
 # NextAuth Credentials Provider
 
 ## 実装パターン

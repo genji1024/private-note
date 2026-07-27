@@ -1,3 +1,8 @@
+---
+name: server-side-supabase
+description: サーバー側での Supabase 使用パターン
+---
+
 # Server-Side Supabase Usage
 
 ## supabaseAdmin の使用

@@ -1,3 +1,8 @@
+---
+name: supabase-setup
+description: Supabase データベース・Storage のセットアップ手順
+---
+
 # Supabase Setup
 
 ## データベースセットアップ手順

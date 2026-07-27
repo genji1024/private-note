@@ -1,3 +1,8 @@
+---
+name: image-upload
+description: 画像アップロード機能の実装パターン（単数・複数）
+---
+
 # Image Upload
 
 ## 単数画像アップロード
