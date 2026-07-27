@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import type { Thread, ThreadComment } from "@/lib/types";
+import type { Thread, ThreadComment, UserProfile } from "@/lib/types";
 import UserMenu from "@/components/UserMenu";
 import HomePageClient from "@/components/HomePageClient";
 
@@ -11,12 +11,23 @@ export default async function HomePage() {
   if (!session) redirect("/login");
 
   const userId = (session.user as any).id as string;
-  // name is always set by NextAuth (from authorize return)
-  // display_name may be missing from old JWT tokens
   const displayName =
     ((session.user as any).display_name as string) || session.user?.name || "";
   const profileImageUrl = (session.user as any).profile_image_url as
     string | null;
+
+  const { data: userRows } = await supabaseAdmin
+    .from("users")
+    .select("id, display_name, profile_image_url, created_at, last_login_at");
+  const userProfiles: Record<string, UserProfile> = {};
+  for (const u of userRows || []) {
+    userProfiles[u.id] = {
+      display_name: u.display_name,
+      profile_image_url: u.profile_image_url,
+      created_at: u.created_at,
+      last_login_at: u.last_login_at,
+    };
+  }
 
   // Fetch all threads (diary thread has is_default=true)
   const { data: threads } = await supabaseAdmin.rpc("get_threads");
@@ -66,6 +77,7 @@ export default async function HomePage() {
         diaryEntries={diaryEntries}
         threadsWithComments={threadsWithComments}
         currentUserId={userId}
+        userProfiles={userProfiles}
       />
     </div>
   );

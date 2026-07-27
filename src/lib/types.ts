@@ -1,4 +1,11 @@
 // Centralized type definitions
+export type UserProfile = {
+  display_name: string;
+  profile_image_url: string | null;
+  created_at: string;
+  last_login_at: string | null;
+};
+
 export type User = {
   id: string;
   username: string;
