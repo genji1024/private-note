@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Thread, ThreadComment } from "@/lib/types";
+import type { Thread, ThreadComment, UserProfile } from "@/lib/types";
 import DiaryView from "@/components/DiaryView";
 import ThreadView from "@/components/ThreadView";
 import NewThreadForm from "@/components/NewThreadForm";
@@ -12,11 +12,13 @@ export default function HomePageClient({
   diaryEntries,
   threadsWithComments,
   currentUserId,
+  userProfiles,
 }: {
   diaryThread: Thread | null;
   diaryEntries: ThreadComment[];
   threadsWithComments: { thread: Thread; comments: ThreadComment[] }[];
   currentUserId: string;
+  userProfiles: Record<string, UserProfile>;
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
   const [showNewThreadForm, setShowNewThreadForm] = useState(false);
@@ -65,6 +67,7 @@ export default function HomePageClient({
           entries={diaryEntries}
           currentUserId={currentUserId}
           diaryThreadId={diaryThread.id}
+          userProfiles={userProfiles}
         />
       )}
 
@@ -77,6 +80,7 @@ export default function HomePageClient({
             comments={comments}
             currentUserId={currentUserId}
             threadId={thread.id}
+            userProfiles={userProfiles}
           />
         ) : null
       )}
