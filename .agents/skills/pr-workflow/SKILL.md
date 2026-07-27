@@ -39,6 +39,19 @@ description: PR 作成・レビュー・CI 検証のワークフロー
 3. `update_pull_request(pullNumber=N, reviewers=["g-ohara"])` で再レビュー依頼
    - コメントだけではレビュー依頼にならない — `update_pull_request` での再リクエストが必須
 
+## ローカル検証（プッシュ前に必ず実行）
+
+コード変更後、プッシュ前に以下の4ステップを**すべて**ローカルで実行すること:
+
+```bash
+npm run lint --max-warnings 0
+npm run format:check
+npm run typecheck
+npm run build
+```
+
+ビルドが通るだけでは不十分。lint・フォーマット・型チェックのすべてが通って初めて「動作確認完了」と見なす。
+
 ## CI チェック
 
 巡回時は必ず `pull_request_read(method="get_check_runs")` で全PRのCI状態を確認する。

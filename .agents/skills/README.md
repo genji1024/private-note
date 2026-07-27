@@ -15,6 +15,7 @@
 7. [sql-idempotency](./sql-idempotency/SKILL.md) — SQL の冪等性パターン（マイグレーション安全対策）
 8. [pr-workflow](./pr-workflow/SKILL.md) — PR 作成・レビュー・CI 検証のワークフロー
 9. [merge-conflict-resolution](./merge-conflict-resolution/SKILL.md) — マージ後のコンフリクト解決手順
+10. [github-autonomous-engineer](./github-autonomous-engineer/SKILL.md) — GitHub上での自律稼働ワークフロー
 
 ## スキルの編集ルール
 
