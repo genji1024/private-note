@@ -16,7 +16,7 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 ## Prerequisites
 
 - GitHub MCP サーバー（mcp-github）のツールを使用する。ローカルの git, ssh, gh CLI は使用しない。
-- リポジトリ情報: owner=`genji1024`, repo=`chihiro-note`
+- リポジトリ情報: owner=`genji1024`, repo=`private-note`
 - セッション開始時は `git remote -v` で正しい owner/repo を確認すること。
 
 ## Workflow
