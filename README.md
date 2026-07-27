@@ -1,4 +1,4 @@
-# chihiro-note
+# private-note
 
 パートナーとの交換日記 Web サービス。
 
