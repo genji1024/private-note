@@ -10,6 +10,9 @@ type Settings = {
   status_unread: string;
   status_read: string;
   status_done: string;
+  tab_diary: string;
+  tab_notes: string;
+  tab_todo: string;
 };
 
 const defaults: Settings = {
@@ -17,6 +20,9 @@ const defaults: Settings = {
   status_unread: "未読",
   status_read: "既読",
   status_done: "読んだ",
+  tab_diary: "日記",
+  tab_notes: "ノート",
+  tab_todo: "TO-DO",
 };
 
 export async function GET() {
@@ -35,6 +41,9 @@ export async function GET() {
     status_unread: data.status_unread || defaults.status_unread,
     status_read: data.status_read || defaults.status_read,
     status_done: data.status_done || defaults.status_done,
+    tab_diary: data.tab_diary || defaults.tab_diary,
+    tab_notes: data.tab_notes || defaults.tab_notes,
+    tab_todo: data.tab_todo || defaults.tab_todo,
   });
 }
 
@@ -63,6 +72,15 @@ export async function PUT(request: Request) {
   }
   if (typeof body.status_done === "string" && body.status_done.trim()) {
     updates.status_done = body.status_done.trim();
+  }
+  if (typeof body.tab_diary === "string" && body.tab_diary.trim()) {
+    updates.tab_diary = body.tab_diary.trim();
+  }
+  if (typeof body.tab_notes === "string" && body.tab_notes.trim()) {
+    updates.tab_notes = body.tab_notes.trim();
+  }
+  if (typeof body.tab_todo === "string" && body.tab_todo.trim()) {
+    updates.tab_todo = body.tab_todo.trim();
   }
 
   const { data, error } = await supabaseAdmin

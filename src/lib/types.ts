@@ -38,6 +38,26 @@ export type ThreadComment = {
   read_by_partner?: boolean;
 };
 
+export type TodoList = {
+  id: string;
+  title: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TodoItem = {
+  id: string;
+  todo_list_id: string;
+  title: string;
+  done: boolean;
+  done_by: string | null;
+  done_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
 // Backward-compatible alias: Entry is now a ThreadComment in the diary thread
 export type Entry = ThreadComment;
 

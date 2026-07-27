@@ -22,6 +22,9 @@ export default async function AdminPage() {
     status_unread: data?.status_unread || "未読",
     status_read: data?.status_read || "既読",
     status_done: data?.status_done || "読んだ",
+    tab_diary: data?.tab_diary || "日記",
+    tab_notes: data?.tab_notes || "ノート",
+    tab_todo: data?.tab_todo || "TO-DO",
   };
 
   return (
