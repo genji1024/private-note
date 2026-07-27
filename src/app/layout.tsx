@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
     .select("site_title")
     .eq("id", 1)
     .single();
-  const title = data?.site_title || "ちひろノート";
+  const title = data?.site_title || "ノート";
   return {
     title,
     description: "パートナーとの交換日記",
