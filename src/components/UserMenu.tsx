@@ -7,9 +7,11 @@ import { signOut } from "next-auth/react";
 export default function UserMenu({
   displayName,
   profileImageUrl,
+  username,
 }: {
   displayName: string;
   profileImageUrl: string | null;
+  username?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -104,6 +106,24 @@ export default function UserMenu({
           >
             プロフィール
           </button>
+          {username === "genji" && (
+            <button
+              onClick={() => router.push("/admin")}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "0.6rem 1rem",
+                background: "none",
+                border: "none",
+                textAlign: "left",
+                cursor: "pointer",
+                fontSize: "0.95rem",
+                color: "var(--fg)",
+              }}
+            >
+              Admin
+            </button>
+          )}
           <button
             onClick={handleLogout}
             style={{

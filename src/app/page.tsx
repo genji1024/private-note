@@ -15,6 +15,14 @@ export default async function HomePage() {
     ((session.user as any).display_name as string) || session.user?.name || "";
   const profileImageUrl = (session.user as any).profile_image_url as
     string | null;
+  const username = (session.user as any).username as string;
+
+  const { data: settings } = await supabaseAdmin
+    .from("settings")
+    .select("*")
+    .eq("id", 1)
+    .single();
+  const siteTitle = settings?.site_title || "ちひろノート";
 
   const { data: userRows } = await supabaseAdmin
     .from("users")
@@ -68,8 +76,12 @@ export default async function HomePage() {
           marginBottom: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.5rem" }}>ちひろノート</h2>
-        <UserMenu displayName={displayName} profileImageUrl={profileImageUrl} />
+        <h2 style={{ fontSize: "1.5rem" }}>{siteTitle}</h2>
+        <UserMenu
+          displayName={displayName}
+          profileImageUrl={profileImageUrl}
+          username={username}
+        />
       </div>
 
       <HomePageClient
@@ -77,6 +89,9 @@ export default async function HomePage() {
         diaryEntries={diaryEntries}
         threadsWithComments={threadsWithComments}
         currentUserId={userId}
+        statusUnread={settings?.status_unread || "未読"}
+        statusRead={settings?.status_read || "既読"}
+        statusDone={settings?.status_done || "読んだ"}
         userProfiles={userProfiles}
       />
     </div>

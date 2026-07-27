@@ -12,12 +12,18 @@ export default function HomePageClient({
   diaryEntries,
   threadsWithComments,
   currentUserId,
+  statusUnread,
+  statusRead,
+  statusDone,
   userProfiles,
 }: {
   diaryThread: Thread | null;
   diaryEntries: ThreadComment[];
   threadsWithComments: { thread: Thread; comments: ThreadComment[] }[];
   currentUserId: string;
+  statusUnread: string;
+  statusRead: string;
+  statusDone: string;
   userProfiles: Record<string, UserProfile>;
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
@@ -67,6 +73,9 @@ export default function HomePageClient({
           entries={diaryEntries}
           currentUserId={currentUserId}
           diaryThreadId={diaryThread.id}
+          statusUnread={statusUnread}
+          statusRead={statusRead}
+          statusDone={statusDone}
           userProfiles={userProfiles}
         />
       )}

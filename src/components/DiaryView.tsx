@@ -14,11 +14,17 @@ export default function DiaryView({
   entries,
   currentUserId,
   diaryThreadId,
+  statusUnread,
+  statusRead,
+  statusDone,
   userProfiles,
 }: {
   entries: ThreadComment[];
   currentUserId: string;
   diaryThreadId: string;
+  statusUnread: string;
+  statusRead: string;
+  statusDone: string;
   userProfiles: Record<string, UserProfile>;
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -95,6 +101,9 @@ export default function DiaryView({
             entry={entry}
             currentUserId={currentUserId}
             diaryThreadId={diaryThreadId}
+            statusUnread={statusUnread}
+            statusRead={statusRead}
+            statusDone={statusDone}
             userProfiles={userProfiles}
           />
         ))
@@ -111,11 +120,17 @@ function DiaryEntry({
   entry,
   currentUserId,
   diaryThreadId,
+  statusUnread,
+  statusRead,
+  statusDone,
   userProfiles,
 }: {
   entry: ThreadComment;
   currentUserId: string;
   diaryThreadId: string;
+  statusUnread: string;
+  statusRead: string;
+  statusDone: string;
   userProfiles: Record<string, UserProfile>;
 }) {
   const [profilePopup, setProfilePopup] = useState(false);
@@ -248,15 +263,15 @@ function DiaryEntry({
           >
             {isAuthor ? (
               entry.read_by_partner ? (
-                <span className="read-badge">既読</span>
+                <span className="read-badge">{statusRead}</span>
               ) : (
-                <span className="read-badge">未読</span>
+                <span className="read-badge">{statusUnread}</span>
               )
             ) : read ? (
-              <span className="read-badge">読んだ</span>
+              <span className="read-badge">{statusDone}</span>
             ) : (
               <button className="btn btn--ghost" onClick={handleRead}>
-                読んだ
+                {statusDone}
               </button>
             )}
             {isAuthor && (
