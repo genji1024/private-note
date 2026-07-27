@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { supabaseAdmin } from "@/lib/supabase";
+import PushNotificationSetup from "@/components/PushNotificationSetup";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { data } = await supabaseAdmin
@@ -12,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description: "パートナーとの交換日記",
+    manifest: "/manifest.webmanifest",
   };
 }
 
@@ -22,7 +24,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {children}
+        <PushNotificationSetup />
+      </body>
     </html>
   );
 }

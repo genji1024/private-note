@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { notifyOtherUsers } from "@/lib/push";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -35,6 +36,14 @@ export async function POST(req: NextRequest) {
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await notifyOtherUsers({
+    authorId,
+    title: "新しいコメントが投稿されました",
+    body: body?.slice(0, 80) || "コメント",
+    url: "/",
+  });
+
   return NextResponse.json({ ok: true });
 }
 
