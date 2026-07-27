@@ -1,0 +1,69 @@
+name: Database Migration
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  migrate:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/deploy migrate')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+
+      - name: Setup PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Apply pending migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          echo "Ensuring migration tracking table exists..."
+          psql "$SUPABASE_DB_URL" -c "
+            CREATE TABLE IF NOT EXISTS _schema_migrations (
+              version TEXT PRIMARY KEY,
+              applied_at TIMESTAMPTZ DEFAULT NOW()
+            );
+          "
+
+          for f in $(ls supabase/migrations/*.sql 2>/dev/null | sort); do
+            version=$(basename "$f" .sql)
+            already_applied=$(psql "$SUPABASE_DB_URL" -t -A -c "SELECT 1 FROM _schema_migrations WHERE version = '${version}';")
+            if [ "$already_applied" = "1" ]; then
+              echo "Skipping $version (already applied)"
+            else
+              echo "Applying $version..."
+              psql "$SUPABASE_DB_URL" -f "$f"
+              psql "$SUPABASE_DB_URL" -c "INSERT INTO _schema_migrations (version) VALUES ('${version}');"
+              echo "Applied: $version"
+            fi
+          done
+
+          echo ""
+          echo "=== Applied Migrations ==="
+          psql "$SUPABASE_DB_URL" -c "SELECT version, applied_at FROM _schema_migrations ORDER BY version;"
+
+      - name: Report result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `## Migration Result
+
+Migrations have been applied successfully.
+
+- See: [Workflow Run](${runUrl})
+- Branch: \`${context.payload.comment.user.login}\`'s PR branch
+
+Please verify the database state and continue with testing.`
+            });
