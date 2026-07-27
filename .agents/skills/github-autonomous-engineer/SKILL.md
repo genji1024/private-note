@@ -28,7 +28,9 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 1. `mcp__github__list_issues(owner="genji1024", repo="chihiro-note")` — オープンイシュー一覧
 2. `mcp__github__list_pull_requests(owner="genji1024", repo="chihiro-note")` — オープンPR一覧
 
-全件を読み、自分が実行すべきタスクを判断する。
+全件を読み、自分が実行すべきタスクを判断する。各 PR の CI ステータスも確認すること。
+
+- CI が失敗している場合 → **必ず原因を特定して修正する**
 
 **注意**: メンションは Issue のコメントにも投稿される可能性がある。PR のレビューコメント・通常コメントだけでなく、**全オープン Issue のコメント**も確認し、自分へのメンションがないかチェックすること。
 
