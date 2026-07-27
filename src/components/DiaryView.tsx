@@ -236,8 +236,8 @@ function DiaryEntry({
               onClose={() => setProfilePopup(false)}
             />
           )}
-          <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
+          <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <div
             style={{
               marginTop: "0.75rem",
