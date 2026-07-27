@@ -36,14 +36,12 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 **0件の場合のクロス確認**: 以下のいずれかで空リポジトリでないことを確認する
 
-- `search_issues(query="repo:genji1024/chihiro-note is:issue")`
-- `search_pull_requests(query="repo:genji1024/chihiro-note is:pr")`
+- `search_issues(query="repo:genji1024/private-note is:issue")`
+- `search_pull_requests(query="repo:genji1024/private-note is:pr")`
 - `list_branches(owner, repo)` + `get_file_contents(owner, repo, path="/")` — 409 なら真の空
 
 ### Step 2: タスク判断基準
 
-| 優先度 | 条件                                        | 例                            |
-| ------ | ------------------------------------------- | ----------------------------- |
 | 優先度 | 条件                                        | 例                            |
 | ------ | ------------------------------------------- | ----------------------------- |
 | **高** | 自分（bot-genji1024）がメンションされている | `@bot-genji1024 これをやって` |
