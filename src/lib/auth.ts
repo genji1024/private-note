@@ -23,8 +23,9 @@ export const authOptions: NextAuthOptions = {
         const user = data[0];
         return {
           id: user.id,
-          name: user.display_name || user.username,
+          name: user.username,
           display_name: user.display_name || user.username,
+          username: user.username,
           profile_image_url: user.profile_image_url || null,
         } as any;
       },
@@ -38,6 +39,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as any).id;
+        token.username = (user as any).username;
         token.display_name = (user as any).display_name;
         token.profile_image_url = (user as any).profile_image_url || null;
       }
@@ -46,6 +48,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id as string;
+        (session.user as any).username = (token.username as string) || "";
         (session.user as any).display_name =
           (token.display_name as string) || "";
         (session.user as any).profile_image_url =
