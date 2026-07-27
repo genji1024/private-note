@@ -166,8 +166,8 @@ function ThreadCommentCard({
             {comment.author_name} ·{" "}
             {new Date(comment.created_at).toLocaleString("ja-JP")}
           </p>
-          <ImageGrid images={displayImages} alt="添付画像" />
           <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
+          <ImageGrid images={displayImages} alt="添付画像" />
           {isAuthor && (
             <div
               style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem" }}

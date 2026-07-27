@@ -209,8 +209,8 @@ function DiaryEntry({
             {entry.author_name} ·{" "}
             {new Date(entry.created_at).toLocaleString("ja-JP")}
           </p>
-          <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
+          <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
           <div
             style={{
               marginTop: "0.75rem",

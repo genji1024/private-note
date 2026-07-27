@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ImageViewer from "@/components/ImageViewer";
 
 const MAX_IMAGES = 4;
 
@@ -175,38 +176,44 @@ export function serializeImageUrls(urls: string[]): string | null {
 
 // Helper: render image grid based on count
 export function ImageGrid({ images, alt }: { images: string[]; alt: string }) {
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
   if (images.length === 0) return null;
-  if (images.length === 1) {
-    return (
-      <img
-        src={images[0]}
-        alt={alt}
-        style={{ width: "100%", borderRadius: "6px", marginBottom: "0.75rem" }}
-      />
-    );
-  }
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "0.5rem",
-        marginBottom: "0.75rem",
-      }}
-    >
-      {images.map((url, i) => (
-        <img
-          key={i}
-          src={url}
-          alt={`${alt} ${i + 1}`}
-          style={{
-            width: "100%",
-            borderRadius: "6px",
-            aspectRatio: "1",
-            objectFit: "cover",
-          }}
+    <>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "nowrap",
+          gap: "0.5rem",
+          marginBottom: "0.75rem",
+        }}
+      >
+        {images.map((url, i) => (
+          <img
+            key={i}
+            src={url}
+            alt={`${alt} ${i + 1}`}
+            onClick={() => setViewerIndex(i)}
+            style={{
+              width: "25%",
+              borderRadius: "6px",
+              aspectRatio: "1",
+              objectFit: "cover",
+              cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
+      {viewerIndex !== null && (
+        <ImageViewer
+          images={images}
+          currentIndex={viewerIndex}
+          onClose={() => setViewerIndex(null)}
+          onIndexChange={setViewerIndex}
         />
-      ))}
-    </div>
+      )}
+    </>
   );
 }
