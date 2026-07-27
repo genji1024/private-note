@@ -4,3 +4,5 @@ out/
 build/
 next-env.d.ts
 supabase/
+.agents/skills/supabase-postgres-best-practices/
+.agents/skills/supabase/

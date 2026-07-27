@@ -15,7 +15,7 @@
     "db:seed": "tsx supabase/seed.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/supabase-js": "^2.110.8",
     "next": "^14.2.35",
     "next-auth": "^4.24.7",
     "react": "^18.3.1",
