@@ -53,17 +53,11 @@ jobs:
         with:
           script: |
             const issue = context.payload.issue;
-            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            const runUrl = process.env.GITHUB_SERVER_URL + "/" + process.env.GITHUB_REPOSITORY + "/actions/runs/" + process.env.GITHUB_RUN_ID;
+            const branch = context.payload.comment.user.login;
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              body: `## Migration Result
-
-Migrations have been applied successfully.
-
-- See: [Workflow Run](${runUrl})
-- Branch: \`${context.payload.comment.user.login}\`'s PR branch
-
-Please verify the database state and continue with testing.`
+              body: "## Migration Result\n\nMigrations have been applied successfully.\n\n- See: [Workflow Run](" + runUrl + ")\n- Branch: `" + branch + "`'s PR branch\n\nPlease verify the database state and continue with testing."
             });
