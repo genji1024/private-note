@@ -38,6 +38,22 @@ export type ThreadComment = {
   read_by_partner?: boolean;
 };
 
+export type ReactionType = {
+  id: number;
+  type: "emoji" | "image";
+  value: string;
+  label: string;
+  sort_order: number;
+};
+
+export type CommentReaction = {
+  id: number;
+  comment_id: string;
+  user_id: string;
+  reaction_type_id: number;
+  created_at: string;
+};
+
 // Backward-compatible alias: Entry is now a ThreadComment in the diary thread
 export type Entry = ThreadComment;
 

@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import type { ThreadComment, UserProfile } from "@/lib/types";
-import { PencilIcon, TrashIcon } from "@/components/Icons";
+import { useState, useEffect, useCallback } from "react";
+import type {
+  ThreadComment,
+  UserProfile,
+  ReactionType,
+  CommentReaction,
+} from "@/lib/types";
 import ProfilePopup from "@/components/ProfilePopup";
 import MultiImageUpload, {
   parseImageUrls,
   serializeImageUrls,
   ImageGrid,
 } from "@/components/MultiImageUpload";
+import ThreeDotMenu from "@/components/ThreeDotMenu";
+import ReactionPicker from "@/components/ReactionPicker";
+import ReactionDisplay from "@/components/ReactionDisplay";
 
 export default function DiaryView({
   entries,
@@ -142,9 +149,40 @@ function DiaryEntry({
     parseImageUrls(entry.image_url)
   );
   const [read, setRead] = useState(entry.read_by_me ?? false);
+  const [reactions, setReactions] = useState<CommentReaction[]>([]);
+  const [reactionTypes, setReactionTypes] = useState<ReactionType[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
 
   const isAuthor = entry.author_id === currentUserId;
   const displayImages = parseImageUrls(entry.image_url);
+
+  const fetchReactions = useCallback(async () => {
+    const res = await fetch(`/api/comments/${entry.id}/reactions`);
+    const data = await res.json();
+    setReactions(data.reactions || []);
+    setReactionTypes(data.types || []);
+  }, [entry.id]);
+
+  useEffect(() => {
+    fetchReactions();
+  }, [fetchReactions]);
+
+  const handleReact = async (typeId: number) => {
+    await fetch(`/api/comments/${entry.id}/reactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reaction_type_id: typeId }),
+    });
+    setShowPicker(false);
+    fetchReactions();
+  };
+
+  const handleRemoveReaction = async () => {
+    await fetch(`/api/comments/${entry.id}/reactions`, {
+      method: "DELETE",
+    });
+    fetchReactions();
+  };
 
   const handleUpdate = async () => {
     await fetch(`/api/threads/${diaryThreadId}/comments`, {
@@ -244,12 +282,32 @@ function DiaryEntry({
             </span>
             {" · "}
             <span>{new Date(entry.created_at).toLocaleString("ja-JP")}</span>
+            <div style={{ marginLeft: "auto" }}>
+              <ThreeDotMenu
+                onEdit={isAuthor ? () => setEditing(true) : undefined}
+                onDelete={isAuthor ? handleDelete : undefined}
+                onReact={() => setShowPicker(!showPicker)}
+              />
+            </div>
           </div>
           {profilePopup && profile && (
             <ProfilePopup
               user={profile}
               onClose={() => setProfilePopup(false)}
             />
+          )}
+          {showPicker && (
+            <div style={{ marginBottom: "0.5rem" }}>
+              <ReactionPicker
+                types={reactionTypes}
+                selectedTypeId={
+                  reactions.find((r) => r.user_id === currentUserId)
+                    ?.reaction_type_id ?? null
+                }
+                onSelect={handleReact}
+                onClose={() => setShowPicker(false)}
+              />
+            </div>
           )}
           <p style={{ whiteSpace: "pre-wrap" }}>{entry.body}</p>
           <ImageGrid images={displayImages} alt={entry.title || "日記画像"} />
@@ -274,34 +332,12 @@ function DiaryEntry({
                 {statusDone}
               </button>
             )}
-            {isAuthor && (
-              <>
-                <button
-                  className="btn btn--ghost"
-                  onClick={() => setEditing(true)}
-                  style={{
-                    padding: "0.4rem",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                  aria-label="編集"
-                >
-                  <PencilIcon />
-                </button>
-                <button
-                  className="btn btn--ghost"
-                  onClick={handleDelete}
-                  style={{
-                    padding: "0.4rem",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                  aria-label="削除"
-                >
-                  <TrashIcon />
-                </button>
-              </>
-            )}
+            <ReactionDisplay
+              reactions={reactions}
+              types={reactionTypes}
+              currentUserId={currentUserId}
+              onRemove={handleRemoveReaction}
+            />
           </div>
         </>
       )}
