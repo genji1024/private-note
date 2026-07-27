@@ -16,7 +16,7 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 ## Prerequisites
 
 - GitHub MCP サーバー（mcp-github）のツールを使用する。ローカルの git, ssh, gh CLI は使用しない。
-- リポジトリ情報: owner=`genji1024`, repo=`chihiro-note`
+- リポジトリ情報: owner=`genji1024`, repo=`private-note`
 - セッション開始時は `git remote -v` で正しい owner/repo を確認すること。
 
 ## Workflow
@@ -56,7 +56,7 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 ユーザに質問せずに実行する。
 
-1. **イシューの場合**: 分析 → ブランチ作成 → ファイル作成/更新 → PR作成（`Closes #N` を body に含める）
+1. **イシューの場合**: 分析 → ブランチ作成 → ファイル作成/更新 → PR作成（`Closes #N` を body に含める）→ Assignee に `bot-genji1024`、Reviewer に `g-ohara` を設定
 2. **PR のレビューコメントの場合**: 分析 → ファイル更新 → コメント報告 → 再レビュー依頼
    - インラインコードレビューと通常コメントの**両方**をチェックすること
 3. **その他**: タスクの性質に応じて適切に実行
