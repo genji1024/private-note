@@ -22,7 +22,9 @@ description: マージ後のコンフリクト解決手順
    - `npm run format:check`
    - `npm run typecheck`
    - `npm run build`
-6. force push
+6. push
+   - `git merge origin/main` でマージコミットを作成した場合: `git push`（force push 不要）
+   - `git rebase origin/main` でリベースした場合: `git push --force-with-lease` が必要
 7. PR にコメントで解決報告 + @g-ohara メンション
 8. `update_pull_request` でレビュー再リクエスト
 
