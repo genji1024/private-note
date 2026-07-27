@@ -12,11 +12,17 @@ export default function HomePageClient({
   diaryEntries,
   threadsWithComments,
   currentUserId,
+  statusUnread,
+  statusRead,
+  statusDone,
 }: {
   diaryThread: Thread | null;
   diaryEntries: ThreadComment[];
   threadsWithComments: { thread: Thread; comments: ThreadComment[] }[];
   currentUserId: string;
+  statusUnread: string;
+  statusRead: string;
+  statusDone: string;
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
   const [showNewThreadForm, setShowNewThreadForm] = useState(false);
@@ -65,6 +71,9 @@ export default function HomePageClient({
           entries={diaryEntries}
           currentUserId={currentUserId}
           diaryThreadId={diaryThread.id}
+          statusUnread={statusUnread}
+          statusRead={statusRead}
+          statusDone={statusDone}
         />
       )}
 
