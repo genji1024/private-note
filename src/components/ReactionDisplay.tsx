@@ -58,7 +58,12 @@ export default function ReactionDisplay({
               <img
                 src={rt.value}
                 alt={rt.label}
-                style={{ width: "16px", height: "16px", objectFit: "cover", borderRadius: "50%" }}
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  objectFit: "cover",
+                  borderRadius: "50%",
+                }}
               />
             )}
             {count > 1 && <span style={{ color: "#666" }}>{count}</span>}

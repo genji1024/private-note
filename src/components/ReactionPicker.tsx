@@ -73,7 +73,12 @@ export default function ReactionPicker({
             <img
               src={t.value}
               alt={t.label}
-              style={{ width: "24px", height: "24px", objectFit: "cover", borderRadius: "50%" }}
+              style={{
+                width: "24px",
+                height: "24px",
+                objectFit: "cover",
+                borderRadius: "50%",
+              }}
             />
           )}
         </button>

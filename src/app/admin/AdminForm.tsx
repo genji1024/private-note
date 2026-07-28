@@ -328,7 +328,9 @@ export default function AdminForm({
           onChange={(e) => setNewReactionValue(e.target.value)}
         />
         {newReactionType === "image" && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <div
+            style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+          >
             <input
               type="file"
               accept="image/jpeg,image/png,image/gif,image/webp"
@@ -340,7 +342,10 @@ export default function AdminForm({
                 setUploadingImage(true);
                 const formData = new FormData();
                 formData.append("file", file);
-                const res = await fetch("/api/upload", { method: "POST", body: formData });
+                const res = await fetch("/api/upload", {
+                  method: "POST",
+                  body: formData,
+                });
                 if (res.ok) {
                   const data = await res.json();
                   setNewReactionValue(data.url);
@@ -348,7 +353,11 @@ export default function AdminForm({
                 setUploadingImage(false);
               }}
             />
-            {uploadingImage && <span style={{ fontSize: "0.8rem", color: "#666" }}>アップロード中...</span>}
+            {uploadingImage && (
+              <span style={{ fontSize: "0.8rem", color: "#666" }}>
+                アップロード中...
+              </span>
+            )}
           </div>
         )}
         <input
