@@ -19,7 +19,16 @@ function PenButton({ onClick }: { onClick: () => void }) {
       }}
       title="編集"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
       </svg>
     </button>
@@ -113,11 +122,19 @@ export default function ProfileForm({
               autoFocus
             />
           ) : (
-            <span style={{ flex: 1, padding: "0.5rem 0.75rem", fontSize: "1rem" }}>
+            <span
+              style={{ flex: 1, padding: "0.5rem 0.75rem", fontSize: "1rem" }}
+            >
               {displayName}
             </span>
           )}
-          <PenButton onClick={() => setEditingField(editingField === "displayName" ? null : "displayName")} />
+          <PenButton
+            onClick={() =>
+              setEditingField(
+                editingField === "displayName" ? null : "displayName"
+              )
+            }
+          />
         </div>
       </div>
 
@@ -164,7 +181,13 @@ export default function ProfileForm({
                 なし
               </div>
             )}
-            <PenButton onClick={() => setEditingField(editingField === "profileImage" ? null : "profileImage")} />
+            <PenButton
+              onClick={() =>
+                setEditingField(
+                  editingField === "profileImage" ? null : "profileImage"
+                )
+              }
+            />
           </div>
         )}
       </div>
@@ -192,11 +215,22 @@ export default function ProfileForm({
               autoFocus
             />
           ) : (
-            <span style={{ flex: 1, padding: "0.5rem 0.75rem", fontSize: "1rem", color: "#999" }}>
+            <span
+              style={{
+                flex: 1,
+                padding: "0.5rem 0.75rem",
+                fontSize: "1rem",
+                color: "#999",
+              }}
+            >
               ********
             </span>
           )}
-          <PenButton onClick={() => setEditingField(editingField === "password" ? null : "password")} />
+          <PenButton
+            onClick={() =>
+              setEditingField(editingField === "password" ? null : "password")
+            }
+          />
         </div>
       </div>
 
