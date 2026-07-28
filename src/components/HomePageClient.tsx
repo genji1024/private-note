@@ -7,12 +7,15 @@ import type {
   UserProfile,
   TodoList,
   TodoItem,
+  CalendarEvent,
 } from "@/lib/types";
 import DiaryView from "@/components/DiaryView";
 import ThreadView from "@/components/ThreadView";
 import NewThreadForm from "@/components/NewThreadForm";
 import ThreadListItem from "@/components/ThreadListItem";
 import TodoView from "@/components/TodoView";
+import CalendarView from "@/components/CalendarView";
+import CountdownDisplay from "@/components/CountdownDisplay";
 
 export default function HomePageClient({
   diaryThread,
@@ -26,7 +29,9 @@ export default function HomePageClient({
   tabDiary,
   tabNotes,
   tabTodo,
+  tabCalendar,
   todoLists,
+  calendarEvents,
 }: {
   diaryThread: Thread | null;
   diaryEntries: ThreadComment[];
@@ -39,7 +44,9 @@ export default function HomePageClient({
   tabDiary: string;
   tabNotes: string;
   tabTodo: string;
+  tabCalendar: string;
   todoLists: (TodoList & { items: TodoItem[] })[];
+  calendarEvents: CalendarEvent[];
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -82,6 +89,12 @@ export default function HomePageClient({
         >
           {tabTodo}
         </TabButton>
+        <TabButton
+          active={activeTab === "calendar"}
+          onClick={() => setActiveTab("calendar")}
+        >
+          {tabCalendar}
+        </TabButton>
       </div>
 
       {activeTab === "diary" && diaryThread && (
@@ -98,6 +111,13 @@ export default function HomePageClient({
 
       {activeTab === "todo" && (
         <TodoView initialLists={todoLists} currentUserId={currentUserId} />
+      )}
+
+      {activeTab === "calendar" && (
+        <CalendarView
+          initialEvents={calendarEvents}
+          currentUserId={currentUserId}
+        />
       )}
 
       {activeTab === "notes" && (
@@ -172,6 +192,8 @@ export default function HomePageClient({
           )}
         </>
       )}
+
+      <CountdownDisplay events={calendarEvents} />
     </>
   );
 }

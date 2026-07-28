@@ -74,6 +74,18 @@ export type CommentReaction = {
   created_at: string;
 };
 
+export type CalendarEvent = {
+  id: string;
+  author_id: string;
+  title: string;
+  location: string;
+  start_at: string;
+  end_at: string | null;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 // Backward-compatible alias: Entry is now a ThreadComment in the diary thread
 export type Entry = ThreadComment;
 

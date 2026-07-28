@@ -1,6 +1,30 @@
 -- Threads schema for chihiro-note
 -- Run after schema.sql
 
+create table if not exists calendar_events (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references users(id) on delete cascade,
+  title text not null,
+  location text not null default '',
+  start_at timestamptz not null,
+  end_at timestamptz,
+  image_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_calendar_events_start_at on calendar_events (start_at asc);
+create index if not exists idx_calendar_events_author_id on calendar_events (author_id);
+
+alter table calendar_events enable row level security;
+
+drop policy if exists "Anyone can read calendar_events" on calendar_events;
+create policy "Anyone can read calendar_events" on calendar_events
+  for select using (true);
+drop policy if exists "Authenticated can write calendar_events" on calendar_events;
+create policy "Authenticated can write calendar_events" on calendar_events
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
 create table if not exists threads (
   id uuid primary key default gen_random_uuid(),
   title text not null,
