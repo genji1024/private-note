@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as any).id;
 
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
-    return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid subscription" },
+      { status: 400 }
+    );
   }
 
   const { error } = await supabaseAdmin.from("push_subscriptions").upsert(
