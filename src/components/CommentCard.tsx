@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import type { ThreadComment, UserProfile } from "@/lib/types";
+import { useState, useEffect, useCallback } from "react";
+import type {
+  ThreadComment,
+  UserProfile,
+  ReactionType,
+  CommentReaction,
+} from "@/lib/types";
 import ProfilePopup from "@/components/ProfilePopup";
 import MultiImageUpload, {
   parseImageUrls,
   serializeImageUrls,
   ImageGrid,
 } from "@/components/MultiImageUpload";
-import { PencilIcon, TrashIcon } from "@/components/Icons";
+import ThreeDotMenu from "@/components/ThreeDotMenu";
+import ReactionPicker from "@/components/ReactionPicker";
+import ReactionDisplay from "@/components/ReactionDisplay";
 
 export default function CommentCard({
   comment,
@@ -27,8 +34,23 @@ export default function CommentCard({
     parseImageUrls(comment.image_url)
   );
 
+  const [reactions, setReactions] = useState<CommentReaction[]>([]);
+  const [reactionTypes, setReactionTypes] = useState<ReactionType[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
+
   const isAuthor = comment.author_id === currentUserId;
   const displayImages = parseImageUrls(comment.image_url);
+
+  const fetchReactions = useCallback(async () => {
+    const res = await fetch(`/api/comments/${comment.id}/reactions`);
+    const data = await res.json();
+    setReactions(data.reactions || []);
+    setReactionTypes(data.types || []);
+  }, [comment.id]);
+
+  useEffect(() => {
+    fetchReactions();
+  }, [fetchReactions]);
 
   const handleUpdate = async () => {
     await fetch(`/api/threads/${comment.thread_id}/comments`, {
@@ -53,6 +75,25 @@ export default function CommentCard({
     });
     window.location.reload();
   };
+
+  const handleReact = async (typeId: number) => {
+    await fetch(`/api/comments/${comment.id}/reactions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reaction_type_id: typeId }),
+    });
+    setShowPicker(false);
+    fetchReactions();
+  };
+
+  const handleRemoveReaction = async () => {
+    await fetch(`/api/comments/${comment.id}/reactions`, {
+      method: "DELETE",
+    });
+    fetchReactions();
+  };
+
+  const myReaction = reactions.find((r) => r.user_id === currentUserId);
 
   return (
     <div className="card">
@@ -110,6 +151,13 @@ export default function CommentCard({
             </span>
             {" · "}
             <span>{new Date(comment.created_at).toLocaleString("ja-JP")}</span>
+            <div style={{ marginLeft: "auto" }}>
+              <ThreeDotMenu
+                onEdit={isAuthor ? () => setEditing(true) : undefined}
+                onDelete={isAuthor ? handleDelete : undefined}
+                onReact={() => setShowPicker(!showPicker)}
+              />
+            </div>
           </div>
           {profilePopup && profile && (
             <ProfilePopup
@@ -117,38 +165,24 @@ export default function CommentCard({
               onClose={() => setProfilePopup(false)}
             />
           )}
-          <ImageGrid images={displayImages} alt="添付画像" />
-          <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
-          {isAuthor && (
-            <div
-              style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem" }}
-            >
-              <button
-                className="btn btn--ghost"
-                onClick={() => setEditing(true)}
-                style={{
-                  padding: "0.4rem",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-                aria-label="編集"
-              >
-                <PencilIcon />
-              </button>
-              <button
-                className="btn btn--ghost"
-                onClick={handleDelete}
-                style={{
-                  padding: "0.4rem",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-                aria-label="削除"
-              >
-                <TrashIcon />
-              </button>
+          {showPicker && (
+            <div style={{ marginBottom: "0.5rem" }}>
+              <ReactionPicker
+                types={reactionTypes}
+                selectedTypeId={myReaction?.reaction_type_id ?? null}
+                onSelect={handleReact}
+                onRemove={handleRemoveReaction}
+                onClose={() => setShowPicker(false)}
+              />
             </div>
           )}
+          <ImageGrid images={displayImages} alt="添付画像" />
+          <p style={{ whiteSpace: "pre-wrap" }}>{comment.body}</p>
+          <ReactionDisplay
+            reactions={reactions}
+            types={reactionTypes}
+            currentUserId={currentUserId}
+          />
         </>
       )}
     </div>
