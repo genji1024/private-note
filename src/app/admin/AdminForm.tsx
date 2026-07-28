@@ -9,6 +9,9 @@ type Settings = {
   status_unread: string;
   status_read: string;
   status_done: string;
+  tab_diary: string;
+  tab_notes: string;
+  tab_todo: string;
 };
 
 export default function AdminForm({
@@ -162,6 +165,63 @@ export default function AdminForm({
             value={settings.status_done}
             onChange={(e) =>
               setSettings({ ...settings, status_done: e.target.value })
+            }
+          />
+        </div>
+        <div style={{ marginBottom: "1rem" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.25rem",
+              fontSize: "0.85rem",
+              color: "#666",
+            }}
+          >
+            「日記」タブの表示テキスト
+          </label>
+          <input
+            className="input"
+            value={settings.tab_diary}
+            onChange={(e) =>
+              setSettings({ ...settings, tab_diary: e.target.value })
+            }
+          />
+        </div>
+        <div style={{ marginBottom: "1rem" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.25rem",
+              fontSize: "0.85rem",
+              color: "#666",
+            }}
+          >
+            「ノート」タブの表示テキスト
+          </label>
+          <input
+            className="input"
+            value={settings.tab_notes}
+            onChange={(e) =>
+              setSettings({ ...settings, tab_notes: e.target.value })
+            }
+          />
+        </div>
+        <div style={{ marginBottom: "1rem" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "0.25rem",
+              fontSize: "0.85rem",
+              color: "#666",
+            }}
+          >
+            「TO-DO」タブの表示テキスト
+          </label>
+          <input
+            className="input"
+            value={settings.tab_todo}
+            onChange={(e) =>
+              setSettings({ ...settings, tab_todo: e.target.value })
             }
           />
         </div>

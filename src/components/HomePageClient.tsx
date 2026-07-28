@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { Thread, ThreadComment, UserProfile } from "@/lib/types";
+import type {
+  Thread,
+  ThreadComment,
+  UserProfile,
+  TodoList,
+  TodoItem,
+} from "@/lib/types";
 import DiaryView from "@/components/DiaryView";
 import ThreadView from "@/components/ThreadView";
 import NewThreadForm from "@/components/NewThreadForm";
 import ThreadListItem from "@/components/ThreadListItem";
+import TodoView from "@/components/TodoView";
 
 export default function HomePageClient({
   diaryThread,
@@ -16,6 +23,10 @@ export default function HomePageClient({
   statusRead,
   statusDone,
   userProfiles,
+  tabDiary,
+  tabNotes,
+  tabTodo,
+  todoLists,
 }: {
   diaryThread: Thread | null;
   diaryEntries: ThreadComment[];
@@ -25,6 +36,10 @@ export default function HomePageClient({
   statusRead: string;
   statusDone: string;
   userProfiles: Record<string, UserProfile>;
+  tabDiary: string;
+  tabNotes: string;
+  tabTodo: string;
+  todoLists: (TodoList & { items: TodoItem[] })[];
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
   const [showNewThreadForm, setShowNewThreadForm] = useState(false);
@@ -45,7 +60,7 @@ export default function HomePageClient({
           active={activeTab === "diary"}
           onClick={() => setActiveTab("diary")}
         >
-          日記
+          {tabDiary}
         </TabButton>
         {threadsWithComments.map(({ thread }) => (
           <TabButton
@@ -56,6 +71,12 @@ export default function HomePageClient({
             {thread.title}
           </TabButton>
         ))}
+        <TabButton
+          active={activeTab === "todo"}
+          onClick={() => setActiveTab("todo")}
+        >
+          {tabTodo}
+        </TabButton>
         <TabButton
           active={activeTab === "new"}
           onClick={() => {
@@ -78,6 +99,10 @@ export default function HomePageClient({
           statusDone={statusDone}
           userProfiles={userProfiles}
         />
+      )}
+
+      {activeTab === "todo" && (
+        <TodoView initialLists={todoLists} currentUserId={currentUserId} />
       )}
 
       {activeTab === "new" && showNewThreadForm && <NewThreadForm />}
@@ -105,7 +130,7 @@ export default function HomePageClient({
               marginBottom: "0.75rem",
             }}
           >
-            スレッド一覧
+            {tabNotes}
           </h3>
           {threadsWithComments.map(({ thread }) => (
             <ThreadListItem
