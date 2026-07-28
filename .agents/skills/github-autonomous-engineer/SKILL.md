@@ -7,17 +7,22 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 ## Overview
 
-`genji1024/chihiro-note` リポジトリ上で、AIエージェントが独立したエンジニアとして自律稼働するためのスキル。すべてのコミュニケーションを GitHub Issues/PR のコメントで完結させ、ユーザ（CLI）への質問を一切行わない。
+`genji1024/private-note` リポジトリ上で、AIエージェントが独立したエンジニアとして自律稼働するためのスキル。すべてのコミュニケーションを GitHub Issues/PR のコメントで完結させ、ユーザ（CLI）への質問を一切行わない。
 
 ## Role
 
-エージェントは `genji1024/chihiro-note` リポジトリの独立エンジニアとして稼働する。ユーザ（g-ohara）とは GitHub 上でのみコミュニケーションする。
+エージェントは `genji1024/private-note` リポジトリの独立エンジニアとして稼働する。ユーザ（g-ohara）とは GitHub 上でのみコミュニケーションする。
 
 ## Prerequisites
 
 - GitHub MCP サーバー（mcp-github）のツールを使用する。ローカルの git, ssh, gh CLI は使用しない。
 - リポジトリ情報: owner=`genji1024`, repo=`private-note`
 - セッション開始時は `git remote -v` で正しい owner/repo を確認すること。
+- GitHub MCP の PR 関連メソッドの使い分け:
+  - `get_review_comments(pullNumber)` — インライン（行単位）のレビューコメントのみを返す
+  - `get_reviews(pullNumber)` — レビュー全体のサマリ（コメント本文 + APPROVE/CHANGES_REQUESTED 状態）を返す
+  - `get_comments(pullNumber)` — PR の通常コメント（Issueスタイルのコメント）を返す
+  - レビュー内容を確認するときは、**3つのメソッドすべて**を呼び出して確認すること
 
 ## Workflow
 
@@ -25,8 +30,8 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 セッション開始時、必ず以下を取得する:
 
-1. `mcp__github__list_issues(owner="genji1024", repo="chihiro-note")` — オープンイシュー一覧
-2. `mcp__github__list_pull_requests(owner="genji1024", repo="chihiro-note")` — オープンPR一覧
+1. `mcp__github__list_issues(owner="genji1024", repo="private-note")` — オープンイシュー一覧
+2. `mcp__github__list_pull_requests(owner="genji1024", repo="private-note")` — オープンPR一覧
 
 全件を読み、自分が実行すべきタスクを判断する。各 PR の CI ステータスも確認すること。
 
@@ -36,8 +41,8 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 **0件の場合のクロス確認**: 以下のいずれかで空リポジトリでないことを確認する
 
-- `search_issues(query="repo:genji1024/chihiro-note is:issue")`
-- `search_pull_requests(query="repo:genji1024/chihiro-note is:pr")`
+- `search_issues(query="repo:genji1024/private-note is:issue")`
+- `search_pull_requests(query="repo:genji1024/private-note is:pr")`
 - `list_branches(owner, repo)` + `get_file_contents(owner, repo, path="/")` — 409 なら真の空
 
 ### Step 2: タスク判断基準
@@ -45,15 +50,13 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 | 優先度 | 条件                                        | 例                            |
 | ------ | ------------------------------------------- | ----------------------------- |
 | **高** | 自分（bot-genji1024）がメンションされている | `@bot-genji1024 これをやって` |
-| **高** | イシュー/PR に `agent` ラベルが付いている   | ラベルベースのタスク指示      |
 | **中** | 未対応のイシューで、自分が実行可能なタスク  | バグ報告、機能要求、改善提案  |
 | **中** | PR でレビューコメントがついているが未対応   | レビュー指摘の修正            |
 | **低** | 一般的なディスカッション                    | アイデア提案、質問            |
 
 判定基準:
 
-- メンション or `agent` ラベル → **必ず実行**
-- それ以外は技術的に実行可能でリスクが低いタスクを選ぶ
+- 自分がメンションされている → **必ず実行**
 - 実行すべきタスクがない場合 → 何もせず終了
 
 ### Step 3: タスクの実行
@@ -92,8 +95,8 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 全タスク完了後、再度すべてのオープン Issue/PR を巡回し、以下の確認を行う:
 
-1. 未対応のメンションがないか（自分がタスク実行中に他のユーザがコメントした可能性）
-2. 未対応のレビューコメント・通常コメントがないか
+1. 自分が作成した PR に g-ohara からのレビューコメントがついていないか → あれば修正
+2. 未対応のメンションがないか
 3. 実行すべきタスクが残っていないか
 
 問題がなければセッションを終了する。
