@@ -192,13 +192,13 @@ CREATE POLICY "Authenticated can write calendar_events" ON calendar_events
 -- 7. 全マイグレーションを完了済みとして登録
 -- ============================================================
 INSERT INTO supabase_migrations.schema_migrations (version, name, statements) VALUES
-  ('20260727_add_last_login', 'add last login', 1),
-  ('20260727_add_tab_names', 'add tab names to settings table', 2),
-  ('20260727_create_push_subscriptions', 'create push subscriptions', 3),
-  ('20260727_create_reactions', 'create reactions', 5),
-  ('20260727_create_settings', 'create settings table', 2),
-  ('20260727_create_todos', 'create todos', 4),
-  ('20260728_create_calendar_events', 'create calendar events', 3)
+  ('20260727_add_last_login', 'add last login', ARRAY['']),
+  ('20260727_add_tab_names', 'add tab names to settings table', ARRAY['']),
+  ('20260727_create_push_subscriptions', 'create push subscriptions', ARRAY['']),
+  ('20260727_create_reactions', 'create reactions', ARRAY['']),
+  ('20260727_create_settings', 'create settings table', ARRAY['']),
+  ('20260727_create_todos', 'create todos', ARRAY['']),
+  ('20260728_create_calendar_events', 'create calendar events', ARRAY[''])
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
