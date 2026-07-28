@@ -3,6 +3,38 @@
 import { useState } from "react";
 import ImageUpload from "@/components/ImageUpload";
 
+function PenButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: "2px",
+        display: "inline-flex",
+        alignItems: "center",
+        color: "#999",
+      }}
+      title="編集"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      </svg>
+    </button>
+  );
+}
+
 export default function ProfileForm({
   initialDisplayName,
   initialProfileImage,
@@ -17,6 +49,7 @@ export default function ProfileForm({
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingField, setEditingField] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +72,7 @@ export default function ProfileForm({
     if (res.ok) {
       setMessage("保存しました");
       setNewPassword("");
+      setEditingField(null);
     } else {
       const data = await res.json();
       setMessage("エラー: " + (data.error || "保存に失敗しました"));
@@ -77,12 +111,31 @@ export default function ProfileForm({
         >
           表示名
         </label>
-        <input
-          className="input"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="表示名"
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {editingField === "displayName" ? (
+            <input
+              className="input"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="表示名"
+              style={{ marginBottom: 0 }}
+              autoFocus
+            />
+          ) : (
+            <span
+              style={{ flex: 1, padding: "0.5rem 0.75rem", fontSize: "1rem" }}
+            >
+              {displayName}
+            </span>
+          )}
+          <PenButton
+            onClick={() =>
+              setEditingField(
+                editingField === "displayName" ? null : "displayName"
+              )
+            }
+          />
+        </div>
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
@@ -96,20 +149,47 @@ export default function ProfileForm({
         >
           プロフィール画像
         </label>
-        {profileImage && (
-          <img
-            src={profileImage}
-            alt="プロフィール画像"
-            style={{
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              marginBottom: "0.5rem",
-            }}
-          />
+        {editingField === "profileImage" ? (
+          <ImageUpload imageUrl={profileImage} onUpload={setProfileImage} />
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="プロフィール画像"
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  backgroundColor: "#e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#999",
+                  fontSize: "0.8rem",
+                }}
+              >
+                なし
+              </div>
+            )}
+            <PenButton
+              onClick={() =>
+                setEditingField(
+                  editingField === "profileImage" ? null : "profileImage"
+                )
+              }
+            />
+          </div>
         )}
-        <ImageUpload imageUrl={profileImage} onUpload={setProfileImage} />
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
@@ -121,15 +201,37 @@ export default function ProfileForm({
             marginBottom: "0.25rem",
           }}
         >
-          パスワード（変更する場合のみ入力）
+          パスワード
         </label>
-        <input
-          className="input"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="新しいパスワード"
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {editingField === "password" ? (
+            <input
+              className="input"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="新しいパスワード"
+              style={{ marginBottom: 0 }}
+              autoFocus
+            />
+          ) : (
+            <span
+              style={{
+                flex: 1,
+                padding: "0.5rem 0.75rem",
+                fontSize: "1rem",
+                color: "#999",
+              }}
+            >
+              ********
+            </span>
+          )}
+          <PenButton
+            onClick={() =>
+              setEditingField(editingField === "password" ? null : "password")
+            }
+          />
+        </div>
       </div>
 
       {message && (
