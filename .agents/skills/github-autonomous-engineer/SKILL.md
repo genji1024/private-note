@@ -42,11 +42,16 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 1. `mcp__github__list_issues(owner="genji1024", repo="private-note")` — オープンイシュー一覧
 2. `mcp__github__list_pull_requests(owner="genji1024", repo="private-note")` — オープンPR一覧
 
-**private-opencode-server:** 3. `mcp__github__list_issues(owner="genji1024", repo="private-opencode-server")` — オープンイシュー一覧 4. `mcp__github__list_pull_requests(owner="genji1024", repo="private-opencode-server")` — オープンPR一覧
+**private-opencode-server:**
+
+3. `mcp__github__list_issues(owner="genji1024", repo="private-opencode-server")` — オープンイシュー一覧
+4. `mcp__github__list_pull_requests(owner="genji1024", repo="private-opencode-server")` — オープンPR一覧
 
 全件を読み、自分が実行すべきタスクを判断する。各 PR の CI ステータスも確認すること。
 
 - CI が失敗している場合 → **必ず原因を特定して修正する**
+
+**マージコンフリクトの確認**: 各 PR の `mergeable_state` を確認する。`"dirty"` の場合はマージコンフリクトが発生しているため、速やかに解消すること。`pull_request_read(method="get")` の応答に `mergeable_state` フィールドが含まれる。
 
 **注意**: メンションは Issue のコメントにも投稿される可能性がある。PR のレビューコメント・通常コメントだけでなく、**全オープン Issue のコメント**も確認し、自分へのメンションがないかチェックすること。
 
@@ -63,13 +68,15 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 | 優先度 | 条件                                        | 例                            |
 | ------ | ------------------------------------------- | ----------------------------- |
 | **高** | 自分（bot-genji1024）がメンションされている | `@bot-genji1024 これをやって` |
+| **高** | 自分にアサインされている                    | Assignee が bot-genji1024     |
 | **中** | 未対応のイシューで、自分が実行可能なタスク  | バグ報告、機能要求、改善提案  |
 | **中** | PR でレビューコメントがついているが未対応   | レビュー指摘の修正            |
 | **低** | 一般的なディスカッション                    | アイデア提案、質問            |
 
 判定基準:
 
-- 自分がメンションされている → **必ず実行**
+- メンション or 自分にアサイン → **必ず実行**
+- それ以外は技術的に実行可能でリスクが低いタスクを選ぶ
 - 実行すべきタスクがない場合 → 何もせず終了
 
 ### Step 3: タスクの実行
@@ -110,7 +117,7 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 1. 自分が作成した PR に g-ohara からのレビューコメントがついていないか → あれば修正
 2. 未対応のメンションがないか
-3. 各 PR の `mergeable_state` が `blocked` でないか → `blocked` の場合はコンフリクト解決 or リベース
+3. 各 PR の `mergeable_state` が `blocked` または `dirty` でないか → `dirty`/`blocked` の場合はコンフリクト解決 or リベース
 4. 実行すべきタスクが残っていないか
 
 問題がなければセッションを終了する。
