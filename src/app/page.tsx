@@ -2,7 +2,13 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import type { Thread, ThreadComment, UserProfile } from "@/lib/types";
+import type {
+  Thread,
+  ThreadComment,
+  UserProfile,
+  TodoList,
+  TodoItem,
+} from "@/lib/types";
 import UserMenu from "@/components/UserMenu";
 import HomePageClient from "@/components/HomePageClient";
 
@@ -66,6 +72,25 @@ export default async function HomePage() {
     });
   }
 
+  // Fetch todo lists with items
+  const { data: todoListsRaw } = await supabaseAdmin
+    .from("todo_lists")
+    .select("id, title, created_by, created_at, updated_at")
+    .order("created_at", { ascending: true });
+
+  const todoLists: (TodoList & { items: TodoItem[] })[] = [];
+  for (const list of todoListsRaw || []) {
+    const { data: items } = await supabaseAdmin
+      .from("todo_items")
+      .select("*")
+      .eq("todo_list_id", list.id)
+      .order("created_at", { ascending: true });
+    todoLists.push({
+      ...list,
+      items: (items as TodoItem[]) || [],
+    });
+  }
+
   return (
     <div className="container">
       <div
@@ -93,6 +118,10 @@ export default async function HomePage() {
         statusRead={settings?.status_read || "既読"}
         statusDone={settings?.status_done || "読んだ"}
         userProfiles={userProfiles}
+        tabDiary={settings?.tab_diary || "日記"}
+        tabNotes={settings?.tab_notes || "ノート"}
+        tabTodo={settings?.tab_todo || "TO-DO"}
+        todoLists={todoLists}
       />
     </div>
   );
