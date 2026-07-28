@@ -88,7 +88,9 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 2. **PR のレビューコメントの場合**: 分析 → ファイル更新 → コメント報告 → 再レビュー依頼
    - インラインコードレビューと通常コメントの**両方**をチェックすること
    - 再レビュー依頼は `update_pull_request(pullNumber=N, reviewers=["g-ohara"])` で行う — コメントだけでは不十分
-  - GitHub API 経由でのファイル編集: `edit` ツールは使えないため、`github_get_file_contents` で内容を取得 → ローカルに一時保存 → `github_create_or_update_file` で編集する
+
+- GitHub API 経由でのファイル編集: `edit` ツールは使えないため、`github_get_file_contents` で内容を取得 → ローカルに一時保存 → `github_create_or_update_file` で編集する
+
 3. **テスト必須**: コード変更後、コミット前に必ずローカルで動作確認を行う
    - `opencode` CLI のサブコマンド・フラグが実際に存在するか事前に `--help` で確認する
    - 依存する CLI の仕様を仮定せず、実際にコマンドを実行して exit code や出力を検証する
