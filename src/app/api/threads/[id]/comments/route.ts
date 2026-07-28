@@ -4,14 +4,16 @@ import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { notifyOtherUsers } from "@/lib/push";
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const session = await getServerSession(authOptions);
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await req.json();
   const { data, error } = await supabaseAdmin.rpc("get_thread_comments", {
-    p_thread_id: id,
+    p_thread_id: params.id,
   });
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
