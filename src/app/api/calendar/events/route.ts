@@ -56,8 +56,7 @@ export async function PUT(req: NextRequest) {
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id, title, location, start_at, end_at, image_url } =
-    await req.json();
+  const { id, title, location, start_at, end_at, image_url } = await req.json();
   const userId = (session.user as any).id;
 
   if (!id) {

@@ -44,7 +44,13 @@ export default function CalendarView({
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.75rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "0.75rem",
+        }}
+      >
         <button
           onClick={() => {
             setEditingEvent(null);
@@ -65,7 +71,9 @@ export default function CalendarView({
       </div>
 
       {error && (
-        <div style={{ color: "red", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+        <div
+          style={{ color: "red", fontSize: "0.85rem", marginBottom: "0.5rem" }}
+        >
           {error}
         </div>
       )}
@@ -75,7 +83,9 @@ export default function CalendarView({
           予定はまだありません
         </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
           {events.map((event) => (
             <EventCard
               key={event.id}
@@ -154,11 +164,15 @@ function EventCard({
           {event.title}
         </div>
         {event.location && (
-          <div style={{ fontSize: "0.8rem", color: "#999", marginTop: "0.15rem" }}>
+          <div
+            style={{ fontSize: "0.8rem", color: "#999", marginTop: "0.15rem" }}
+          >
             {event.location}
           </div>
         )}
-        <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.25rem" }}>
+        <div
+          style={{ fontSize: "0.8rem", color: "#666", marginTop: "0.25rem" }}
+        >
           {startDate.toLocaleString("ja-JP", {
             month: "long",
             day: "numeric",
@@ -250,7 +264,10 @@ function EventFormPopup({
       setError(null);
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "アップロードに失敗しました");
@@ -258,7 +275,9 @@ function EventFormPopup({
       const data = await res.json();
       setImageUrl(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "アップロードに失敗しました");
+      setError(
+        err instanceof Error ? err.message : "アップロードに失敗しました"
+      );
     } finally {
       setUploading(false);
     }
@@ -334,9 +353,19 @@ function EventFormPopup({
           {event ? "予定を編集" : "新しい予定"}
         </h3>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+        >
           <div>
-            <label style={{ fontSize: "0.85rem", color: "#666", display: "block", marginBottom: "0.25rem" }}>
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                display: "block",
+                marginBottom: "0.25rem",
+              }}
+            >
               予定名 <span style={{ color: "red" }}>*</span>
             </label>
             <input
@@ -357,7 +386,14 @@ function EventFormPopup({
           </div>
 
           <div>
-            <label style={{ fontSize: "0.85rem", color: "#666", display: "block", marginBottom: "0.25rem" }}>
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                display: "block",
+                marginBottom: "0.25rem",
+              }}
+            >
               場所
             </label>
             <input
@@ -377,7 +413,14 @@ function EventFormPopup({
           </div>
 
           <div>
-            <label style={{ fontSize: "0.85rem", color: "#666", display: "block", marginBottom: "0.25rem" }}>
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                display: "block",
+                marginBottom: "0.25rem",
+              }}
+            >
               開始日時 <span style={{ color: "red" }}>*</span>
             </label>
             <input
@@ -397,7 +440,14 @@ function EventFormPopup({
           </div>
 
           <div>
-            <label style={{ fontSize: "0.85rem", color: "#666", display: "block", marginBottom: "0.25rem" }}>
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                display: "block",
+                marginBottom: "0.25rem",
+              }}
+            >
               終了日時
             </label>
             <input
@@ -416,7 +466,14 @@ function EventFormPopup({
           </div>
 
           <div>
-            <label style={{ fontSize: "0.85rem", color: "#666", display: "block", marginBottom: "0.25rem" }}>
+            <label
+              style={{
+                fontSize: "0.85rem",
+                color: "#666",
+                display: "block",
+                marginBottom: "0.25rem",
+              }}
+            >
               画像（1枚まで）
             </label>
             {imageUrl ? (
@@ -483,7 +540,14 @@ function EventFormPopup({
             <div style={{ color: "red", fontSize: "0.85rem" }}>{error}</div>
           )}
 
-          <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", marginTop: "0.5rem" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              justifyContent: "flex-end",
+              marginTop: "0.5rem",
+            }}
+          >
             <button
               type="button"
               onClick={onClose}

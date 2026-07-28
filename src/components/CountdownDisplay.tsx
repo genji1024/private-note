@@ -22,10 +22,11 @@ export default function CountdownDisplay({
   const [showPopup, setShowPopup] = useState(false);
 
   const now = new Date();
-  const upcoming = events
-    .map((e) => ({ event: e, startAt: new Date(e.start_at) }))
-    .filter(({ startAt }) => startAt > now)
-    .sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0] || null;
+  const upcoming =
+    events
+      .map((e) => ({ event: e, startAt: new Date(e.start_at) }))
+      .filter(({ startAt }) => startAt > now)
+      .sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0] || null;
 
   if (!upcoming) return null;
 
@@ -86,7 +87,9 @@ function CountdownFloat({
         minWidth: "120px",
       }}
     >
-      <div style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: "0.15rem" }}>
+      <div
+        style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: "0.15rem" }}
+      >
         {event.title}
       </div>
       <div style={{ fontWeight: "bold", fontVariantNumeric: "tabular-nums" }}>
@@ -157,7 +160,9 @@ function CountdownPopup({
           padding: "2rem",
         }}
       >
-        <div style={{ fontSize: "1.1rem", marginBottom: "0.5rem", opacity: 0.9 }}>
+        <div
+          style={{ fontSize: "1.1rem", marginBottom: "0.5rem", opacity: 0.9 }}
+        >
           {event.title}
         </div>
         {countdown ? (
