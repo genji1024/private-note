@@ -31,6 +31,7 @@ export default function AdminForm({
   );
   const [newReactionValue, setNewReactionValue] = useState("");
   const [newReactionLabel, setNewReactionLabel] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,6 +266,30 @@ export default function AdminForm({
           value={newReactionValue}
           onChange={(e) => setNewReactionValue(e.target.value)}
         />
+        {newReactionType === "image" && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ fontSize: "0.85rem", maxWidth: "140px" }}
+              disabled={uploadingImage}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingImage(true);
+                const formData = new FormData();
+                formData.append("file", file);
+                const res = await fetch("/api/upload", { method: "POST", body: formData });
+                if (res.ok) {
+                  const data = await res.json();
+                  setNewReactionValue(data.url);
+                }
+                setUploadingImage(false);
+              }}
+            />
+            {uploadingImage && <span style={{ fontSize: "0.8rem", color: "#666" }}>アップロード中...</span>}
+          </div>
+        )}
         <input
           className="input"
           style={{ width: "auto", flex: 1, minWidth: "100px" }}
