@@ -8,6 +8,7 @@ import type {
   UserProfile,
   TodoList,
   TodoItem,
+  CalendarEvent,
 } from "@/lib/types";
 import UserMenu from "@/components/UserMenu";
 import HomePageClient from "@/components/HomePageClient";
@@ -91,6 +92,13 @@ export default async function HomePage() {
     });
   }
 
+  // Fetch calendar events
+  const { data: calendarEventsData } = await supabaseAdmin
+    .from("calendar_events")
+    .select("*")
+    .order("start_at", { ascending: true });
+  const calendarEvents = (calendarEventsData as CalendarEvent[]) || [];
+
   return (
     <div className="container">
       <div
@@ -121,7 +129,9 @@ export default async function HomePage() {
         tabDiary={settings?.tab_diary || "日記"}
         tabNotes={settings?.tab_notes || "ノート"}
         tabTodo={settings?.tab_todo || "TO-DO"}
+        tabCalendar={settings?.tab_calendar || "カレンダー"}
         todoLists={todoLists}
+        calendarEvents={calendarEvents}
       />
     </div>
   );
