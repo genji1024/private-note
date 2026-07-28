@@ -261,6 +261,7 @@ function ThreadCommentCard({
                 types={reactionTypes}
                 selectedTypeId={myReaction?.reaction_type_id ?? null}
                 onSelect={handleReact}
+                onRemove={handleRemoveReaction}
                 onClose={() => setShowPicker(false)}
               />
             </div>
@@ -271,7 +272,6 @@ function ThreadCommentCard({
             reactions={reactions}
             types={reactionTypes}
             currentUserId={currentUserId}
-            onRemove={handleRemoveReaction}
           />
         </>
       )}

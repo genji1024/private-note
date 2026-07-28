@@ -7,11 +7,13 @@ export default function ReactionPicker({
   types,
   selectedTypeId,
   onSelect,
+  onRemove,
   onClose,
 }: {
   types: ReactionType[];
   selectedTypeId: number | null;
   onSelect: (typeId: number) => void;
+  onRemove?: () => void;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -43,7 +45,13 @@ export default function ReactionPicker({
       {types.map((t) => (
         <button
           key={t.id}
-          onClick={() => onSelect(t.id)}
+          onClick={() => {
+            if (onRemove && selectedTypeId === t.id) {
+              onRemove();
+            } else {
+              onSelect(t.id);
+            }
+          }}
           style={{
             fontSize: "1.25rem",
             padding: "0.3rem",

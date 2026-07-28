@@ -6,12 +6,10 @@ export default function ReactionDisplay({
   reactions,
   types,
   currentUserId,
-  onRemove,
 }: {
   reactions: CommentReaction[];
   types: ReactionType[];
   currentUserId: string;
-  onRemove: () => void;
 }) {
   if (reactions.length === 0) return null;
 
@@ -37,11 +35,8 @@ export default function ReactionDisplay({
         if (!rt) return null;
         const isMine = myReaction?.reaction_type_id === typeId;
         return (
-          <button
+          <span
             key={typeId}
-            onClick={() => {
-              if (isMine) onRemove();
-            }}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -53,7 +48,6 @@ export default function ReactionDisplay({
                 ? "1px solid var(--accent)"
                 : "1px solid var(--border)",
               borderRadius: "12px",
-              cursor: isMine ? "pointer" : "default",
               lineHeight: 1.3,
             }}
             title={`${rt.label}${count > 1 ? ` (${count})` : ""}`}
@@ -68,7 +62,7 @@ export default function ReactionDisplay({
               />
             )}
             {count > 1 && <span style={{ color: "#666" }}>{count}</span>}
-          </button>
+          </span>
         );
       })}
     </div>

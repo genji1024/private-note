@@ -171,6 +171,7 @@ export default function CommentCard({
                 types={reactionTypes}
                 selectedTypeId={myReaction?.reaction_type_id ?? null}
                 onSelect={handleReact}
+                onRemove={handleRemoveReaction}
                 onClose={() => setShowPicker(false)}
               />
             </div>
@@ -181,7 +182,6 @@ export default function CommentCard({
             reactions={reactions}
             types={reactionTypes}
             currentUserId={currentUserId}
-            onRemove={handleRemoveReaction}
           />
         </>
       )}

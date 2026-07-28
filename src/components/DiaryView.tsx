@@ -305,6 +305,7 @@ function DiaryEntry({
                     ?.reaction_type_id ?? null
                 }
                 onSelect={handleReact}
+                onRemove={handleRemoveReaction}
                 onClose={() => setShowPicker(false)}
               />
             </div>
@@ -336,7 +337,6 @@ function DiaryEntry({
               reactions={reactions}
               types={reactionTypes}
               currentUserId={currentUserId}
-              onRemove={handleRemoveReaction}
             />
           </div>
         </>
