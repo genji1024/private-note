@@ -26,7 +26,10 @@ export async function PUT(
     .single();
 
   if (!list) {
-    return NextResponse.json({ error: "リストが見つかりません" }, { status: 404 });
+    return NextResponse.json(
+      { error: "リストが見つかりません" },
+      { status: 404 }
+    );
   }
   if (list.created_by !== userId) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
@@ -64,7 +67,10 @@ export async function DELETE(
     .single();
 
   if (!list) {
-    return NextResponse.json({ error: "リストが見つかりません" }, { status: 404 });
+    return NextResponse.json(
+      { error: "リストが見つかりません" },
+      { status: 404 }
+    );
   }
   if (list.created_by !== userId) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });

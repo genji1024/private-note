@@ -102,10 +102,7 @@ export default function HomePageClient({
       )}
 
       {activeTab === "todo" && (
-        <TodoView
-          initialLists={todoLists}
-          currentUserId={currentUserId}
-        />
+        <TodoView initialLists={todoLists} currentUserId={currentUserId} />
       )}
 
       {activeTab === "new" && showNewThreadForm && <NewThreadForm />}

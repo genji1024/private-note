@@ -228,7 +228,11 @@ export default function TodoView({
               value={newItemTitle}
               onChange={(e) => setNewItemTitle(e.target.value)}
             />
-            <button className="btn" type="submit" disabled={!newItemTitle.trim()}>
+            <button
+              className="btn"
+              type="submit"
+              disabled={!newItemTitle.trim()}
+            >
               追加
             </button>
           </div>
@@ -318,7 +322,13 @@ export default function TodoView({
           >
             <span>
               {list.title}
-              <span style={{ color: "#999", fontSize: "0.85rem", marginLeft: "0.5rem" }}>
+              <span
+                style={{
+                  color: "#999",
+                  fontSize: "0.85rem",
+                  marginLeft: "0.5rem",
+                }}
+              >
                 {list.items.filter((i) => !i.done).length}/{list.items.length}
               </span>
             </span>
@@ -338,9 +348,7 @@ export default function TodoView({
           </div>
         ))
       ) : (
-        <p style={{ color: "#999", textAlign: "center" }}>
-          リストがありません
-        </p>
+        <p style={{ color: "#999", textAlign: "center" }}>リストがありません</p>
       )}
     </>
   );
@@ -383,7 +391,12 @@ function TodoItemCard({
         type="checkbox"
         checked={item.done}
         onChange={() => onToggle(item)}
-        style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer", flexShrink: 0 }}
+        style={{
+          width: "1.1rem",
+          height: "1.1rem",
+          cursor: "pointer",
+          flexShrink: 0,
+        }}
       />
       {isEditing ? (
         <input

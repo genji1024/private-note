@@ -64,7 +64,10 @@ export async function DELETE(
     .single();
 
   if (!item) {
-    return NextResponse.json({ error: "項目が見つかりません" }, { status: 404 });
+    return NextResponse.json(
+      { error: "項目が見つかりません" },
+      { status: 404 }
+    );
   }
   if (item.created_by !== userId) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
