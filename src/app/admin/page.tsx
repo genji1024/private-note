@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import AdminForm from "./AdminForm";
+import type { ReactionType } from "@/lib/types";
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
@@ -24,10 +25,18 @@ export default async function AdminPage() {
     status_done: data?.status_done || "読んだ",
   };
 
+  const { data: reactionTypes } = await supabaseAdmin
+    .from("reaction_types")
+    .select("*")
+    .order("sort_order");
+
   return (
     <div className="container" style={{ maxWidth: "500px" }}>
       <h2 style={{ marginBottom: "1rem" }}>Admin 設定</h2>
-      <AdminForm settings={settings} />
+      <AdminForm
+        settings={settings}
+        initialReactionTypes={reactionTypes as ReactionType[] | null}
+      />
     </div>
   );
 }

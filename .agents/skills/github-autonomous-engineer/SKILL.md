@@ -7,17 +7,24 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 ## Overview
 
-`genji1024/private-note` リポジトリ上で、AIエージェントが独立したエンジニアとして自律稼働するためのスキル。すべてのコミュニケーションを GitHub Issues/PR のコメントで完結させ、ユーザ（CLI）への質問を一切行わない。
+`genji1024/private-note` および `genji1024/private-opencode-server` リポジトリ上で、AIエージェントが独立したエンジニアとして自律稼働するためのスキル。すべてのコミュニケーションを GitHub Issues/PR のコメントで完結させ、ユーザ（CLI）への質問を一切行わない。
 
 ## Role
 
-エージェントは `genji1024/private-note` リポジトリの独立エンジニアとして稼働する。ユーザ（g-ohara）とは GitHub 上でのみコミュニケーションする。
+エージェントは `genji1024/private-note` および `genji1024/private-opencode-server` リポジトリの独立エンジニアとして稼働する。ユーザ（g-ohara）とは GitHub 上でのみコミュニケーションする。
 
 ## Prerequisites
 
 - GitHub MCP サーバー（mcp-github）のツールを使用する。ローカルの git, ssh, gh CLI は使用しない。
-- リポジトリ情報: owner=`genji1024`, repo=`private-note`
-- セッション開始時は `git remote -v` で正しい owner/repo を確認すること。
+- 監視リポジトリ一覧:
+  - owner=`genji1024`, repo=`private-note`
+  - owner=`genji1024`, repo=`private-opencode-server`
+- セッション開始時は `git remote -v` で現在のワークスペースの owner/repo を確認すること。
+- GitHub MCP の PR 関連メソッドの使い分け:
+  - `get_review_comments(pullNumber)` — インライン（行単位）のレビューコメントのみを返す
+  - `get_reviews(pullNumber)` — レビュー全体のサマリ（コメント本文 + APPROVE/CHANGES_REQUESTED 状態）を返す
+  - `get_comments(pullNumber)` — PR の通常コメント（Issueスタイルのコメント）を返す
+  - レビュー内容を確認するときは、**3つのメソッドすべて**を呼び出して確認すること
 
 ## Workflow
 
@@ -25,19 +32,23 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 セッション開始時、必ず以下を取得する:
 
-1. `mcp__github__list_issues(owner="genji1024", repo="private-note")` — オープンイシュー一覧
-2. `mcp__github__list_pull_requests(owner="genji1024", repo="private-note")` — オープンPR一覧
+1. `list_issues(owner="genji1024", repo="private-note")` — オープンイシュー一覧
+2. `list_pull_requests(owner="genji1024", repo="private-note")` — オープンPR一覧
+3. `list_issues(owner="genji1024", repo="private-opencode-server")` — オープンイシュー一覧
+4. `list_pull_requests(owner="genji1024", repo="private-opencode-server")` — オープンPR一覧
 
 全件を読み、自分が実行すべきタスクを判断する。各 PR の CI ステータスも確認すること。
 
 - CI が失敗している場合 → **必ず原因を特定して修正する**
 
+**マージコンフリクトの確認**: 各 PR の `mergeable_state` を確認する。`"dirty"` の場合はマージコンフリクトが発生しているため、速やかに解消すること。`pull_request_read(method="get")` の応答に `mergeable_state` フィールドが含まれる。
+
 **注意**: メンションは Issue のコメントにも投稿される可能性がある。PR のレビューコメント・通常コメントだけでなく、**全オープン Issue のコメント**も確認し、自分へのメンションがないかチェックすること。
 
 **0件の場合のクロス確認**: 以下のいずれかで空リポジトリでないことを確認する
 
-- `search_issues(query="repo:genji1024/private-note is:issue")`
-- `search_pull_requests(query="repo:genji1024/private-note is:pr")`
+- `search_issues(query="repo:OWNER/REPO is:issue")`
+- `search_pull_requests(query="repo:OWNER/REPO is:pr")`
 - `list_branches(owner, repo)` + `get_file_contents(owner, repo, path="/")` — 409 なら真の空
 
 ### Step 2: タスク判断基準
@@ -92,9 +103,10 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 
 全タスク完了後、再度すべてのオープン Issue/PR を巡回し、以下の確認を行う:
 
-1. 未対応のメンションがないか（自分がタスク実行中に他のユーザがコメントした可能性）
-2. 未対応のレビューコメント・通常コメントがないか
+1. 自分が作成した PR に g-ohara からのレビューコメントがついていないか → あれば修正
+2. 未対応のメンションがないか
 3. 実行すべきタスクが残っていないか
+4. 各 PR の `mergeable_state` が `"dirty"` でないか → コンフリクトがあれば解消する
 
 問題がなければセッションを終了する。
 
