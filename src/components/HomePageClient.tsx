@@ -42,11 +42,15 @@ export default function HomePageClient({
   todoLists: (TodoList & { items: TodoItem[] })[];
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [showNewThreadForm, setShowNewThreadForm] = useState(false);
+
+  const selectedNote = selectedNoteId
+    ? threadsWithComments.find(({ thread }) => thread.id === selectedNoteId)
+    : null;
 
   return (
     <>
-      {/* Tab menu */}
       <div
         style={{
           display: "flex",
@@ -62,33 +66,24 @@ export default function HomePageClient({
         >
           {tabDiary}
         </TabButton>
-        {threadsWithComments.map(({ thread }) => (
-          <TabButton
-            key={thread.id}
-            active={activeTab === thread.id}
-            onClick={() => setActiveTab(thread.id)}
-          >
-            {thread.title}
-          </TabButton>
-        ))}
+        <TabButton
+          active={activeTab === "notes"}
+          onClick={() => {
+            setActiveTab("notes");
+            setSelectedNoteId(null);
+            setShowNewThreadForm(false);
+          }}
+        >
+          {tabNotes}
+        </TabButton>
         <TabButton
           active={activeTab === "todo"}
           onClick={() => setActiveTab("todo")}
         >
           {tabTodo}
         </TabButton>
-        <TabButton
-          active={activeTab === "new"}
-          onClick={() => {
-            setActiveTab("new");
-            setShowNewThreadForm(true);
-          }}
-        >
-          +
-        </TabButton>
       </div>
 
-      {/* Tab content */}
       {activeTab === "diary" && diaryThread && (
         <DiaryView
           entries={diaryEntries}
@@ -105,40 +100,76 @@ export default function HomePageClient({
         <TodoView initialLists={todoLists} currentUserId={currentUserId} />
       )}
 
-      {activeTab === "new" && showNewThreadForm && <NewThreadForm />}
-
-      {threadsWithComments.map(({ thread, comments }) =>
-        activeTab === thread.id ? (
-          <ThreadView
-            key={thread.id}
-            comments={comments}
-            currentUserId={currentUserId}
-            threadId={thread.id}
-            userProfiles={userProfiles}
-          />
-        ) : null
-      )}
-
-      {/* Thread management list (shown when no specific thread is active) */}
-      {activeTab === "new" && threadsWithComments.length > 0 && (
+      {activeTab === "notes" && (
         <>
-          <h3
-            style={{
-              fontSize: "1rem",
-              color: "#666",
-              marginTop: "1.5rem",
-              marginBottom: "0.75rem",
-            }}
-          >
-            {tabNotes}
-          </h3>
-          {threadsWithComments.map(({ thread }) => (
-            <ThreadListItem
-              key={thread.id}
-              thread={thread}
-              currentUserId={currentUserId}
-            />
-          ))}
+          {selectedNote ? (
+            <>
+              <button
+                onClick={() => setSelectedNoteId(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--accent)",
+                  cursor: "pointer",
+                  padding: "0.5rem 0",
+                  marginBottom: "1rem",
+                  fontSize: "0.9rem",
+                }}
+              >
+                ← {tabNotes}
+              </button>
+              <ThreadView
+                comments={selectedNote.comments}
+                currentUserId={currentUserId}
+                threadId={selectedNote.thread.id}
+                userProfiles={userProfiles}
+              />
+            </>
+          ) : (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                <button
+                  onClick={() => setShowNewThreadForm(true)}
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--accent)",
+                    color: "var(--accent)",
+                    borderRadius: "4px",
+                    padding: "0.25rem 0.75rem",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  + {tabNotes}
+                </button>
+              </div>
+              {showNewThreadForm && <NewThreadForm />}
+              {threadsWithComments.length > 0 ? (
+                threadsWithComments.map(({ thread }) => (
+                  <div
+                    key={thread.id}
+                    onClick={() => setSelectedNoteId(thread.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <ThreadListItem
+                      thread={thread}
+                      currentUserId={currentUserId}
+                    />
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: "#999", fontSize: "0.9rem" }}>
+                  ノートはまだありません
+                </p>
+              )}
+            </>
+          )}
         </>
       )}
     </>
