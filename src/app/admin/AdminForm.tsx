@@ -223,7 +223,8 @@ export default function AdminForm({
                   style={{
                     width: "24px",
                     height: "24px",
-                    objectFit: "contain",
+                    objectFit: "cover",
+                    borderRadius: "50%",
                   }}
                 />
               )}

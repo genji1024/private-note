@@ -18,6 +18,11 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 - GitHub MCP サーバー（mcp-github）のツールを使用する。ローカルの git, ssh, gh CLI は使用しない。
 - リポジトリ情報: owner=`genji1024`, repo=`private-note`
 - セッション開始時は `git remote -v` で正しい owner/repo を確認すること。
+- GitHub MCP の PR 関連メソッドの使い分け:
+  - `get_review_comments(pullNumber)` — インライン（行単位）のレビューコメントのみを返す
+  - `get_reviews(pullNumber)` — レビュー全体のサマリ（コメント本文 + APPROVE/CHANGES_REQUESTED 状態）を返す
+  - `get_comments(pullNumber)` — PR の通常コメント（Issueスタイルのコメント）を返す
+  - レビュー内容を確認するときは、**3つのメソッドすべて**を呼び出して確認すること
 
 ## Workflow
 
