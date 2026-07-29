@@ -150,37 +150,50 @@ export default function ProfileForm({
           プロフィール画像
         </label>
         {editingField === "profileImage" ? (
-          <ImageUpload imageUrl={profileImage} onUpload={setProfileImage} />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ flex: 1 }}>
+              <ImageUpload imageUrl={profileImage} onUpload={setProfileImage} />
+            </div>
+            <PenButton
+              onClick={() =>
+                setEditingField(
+                  editingField === "profileImage" ? null : "profileImage"
+                )
+              }
+            />
+          </div>
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt="プロフィール画像"
-                style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  backgroundColor: "#e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#999",
-                  fontSize: "0.8rem",
-                }}
-              >
-                なし
-              </div>
-            )}
+            <div style={{ flex: 1 }}>
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="プロフィール画像"
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    backgroundColor: "#e2e8f0",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#999",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  なし
+                </div>
+              )}
+            </div>
             <PenButton
               onClick={() =>
                 setEditingField(

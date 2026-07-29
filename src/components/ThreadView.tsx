@@ -272,6 +272,7 @@ function ThreadCommentCard({
             reactions={reactions}
             types={reactionTypes}
             currentUserId={currentUserId}
+            userProfiles={userProfiles}
           />
         </>
       )}
