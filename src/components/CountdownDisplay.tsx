@@ -88,7 +88,14 @@ function CountdownFloat({
     origX: number;
     origY: number;
     moved: boolean;
-  }>({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0, moved: false });
+  }>({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    origX: 0,
+    origY: 0,
+    moved: false,
+  });
   const elRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -128,7 +135,7 @@ function CountdownFloat({
       };
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [resolveOrigin],
+    [resolveOrigin]
   );
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -151,7 +158,7 @@ function CountdownFloat({
         savePosition(pos.x, pos.y);
       }
     },
-    [pos],
+    [pos]
   );
 
   const handleClick = useCallback(
@@ -163,7 +170,7 @@ function CountdownFloat({
       }
       onClick();
     },
-    [onClick],
+    [onClick]
   );
 
   if (!countdown) return null;
