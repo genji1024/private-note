@@ -88,14 +88,14 @@ description: GitHub上で独立エンジニアとして自律稼働するスキ�
 2. **PR のレビューコメントの場合**: 分析 → ファイル更新 → コメント報告 → 再レビュー依頼
    - インラインコードレビューと通常コメントの**両方**をチェックすること
    - 再レビュー依頼は `update_pull_request(pullNumber=N, reviewers=["g-ohara"])` で行う — コメントだけでは不十分
-
-- GitHub API 経由でのファイル編集: `edit` ツールは使えないため、`github_get_file_contents` で内容を取得 → ローカルに一時保存 → `github_create_or_update_file` で編集する
-
+   - GitHub API 経由でのファイル編集: `edit` ツールは使えないため、`github_get_file_contents` で内容を取得 → ローカルに一時保存 → `github_create_or_update_file` で編集する
 3. **テスト必須**: コード変更後、コミット前に必ずローカルで動作確認を行う
     - `opencode` CLI のサブコマンド・フラグが実際に存在するか事前に `--help` で確認する
     - 依存する CLI の仕様を仮定せず、実際にコマンドを実行して exit code や出力を検証する
     - **Web サーバーが関わる変更の場合**: `npm run dev` で開発サーバーを起動し、ブラウザからアクセスして機能が正常に動作することを end-to-end で確認する。API のレスポンスだけでなく、実際の画面表示や外部プロセス（`opencode serve` 等）の起動も確認する
     - **サーバーレス環境（Vercel 等）の制約**: `child_process` や長時間稼働するプロセスはサーバーレス環境で動作しない場合がある。アーキテクチャ設計時にデプロイ先環境の制約を考慮する
+    - **npm postinstall スクリプト**: `opencode-ai` 等のパッケージは postinstall でバイナリをダウンロードする。`npm install --ignore-scripts` や npm の `allowScripts` 設定で postinstall がブロックされる場合がある。コード内で `--version` 等のチェックが失敗した場合は、`node_modules/<package>/postinstall.mjs` を自動実行するフォールバックを実装する
+    - **子プロセスの管理**: `detached: true` + `unref()` はプロセスの孤儿化を招き、状態管理が難しくなる。可能な限り foreground プロセスとして管理し、`close` イベントで確実に状態を更新する
     - テストできない環境の場合は、その理由を明確にコミットメッセージや PR コメントに記載する
 4. **その他**: タスクの性質に応じて適切に実行
 
