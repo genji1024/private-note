@@ -72,7 +72,9 @@ export default function ThreadView({
     <>
       <div style={{ marginBottom: "1rem" }}>
         {editingDescription ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+          >
             <textarea
               className="textarea"
               placeholder="概要を入力..."

@@ -320,9 +320,7 @@ export default function TodoView({
             </span>
             {list.created_by === currentUserId && (
               <div onClick={(e) => e.stopPropagation()}>
-                <ThreeDotMenu
-                  onDelete={() => handleDeleteList(list.id)}
-                />
+                <ThreeDotMenu onDelete={() => handleDeleteList(list.id)} />
               </div>
             )}
           </div>

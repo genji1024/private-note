@@ -173,12 +173,7 @@ function EventCard({
             })}`}
         </div>
       </div>
-      {isOwner && (
-        <ThreeDotMenu
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-      )}
+      {isOwner && <ThreeDotMenu onEdit={onEdit} onDelete={onDelete} />}
     </div>
   );
 }
