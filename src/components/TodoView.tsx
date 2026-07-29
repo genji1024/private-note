@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { TodoList, TodoItem } from "@/lib/types";
-import { PencilIcon, TrashIcon } from "@/components/Icons";
+import ThreeDotMenu from "@/components/ThreeDotMenu";
 
 export default function TodoView({
   initialLists,
@@ -19,6 +19,7 @@ export default function TodoView({
   const [editingListTitle, setEditingListTitle] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemTitle, setEditingItemTitle] = useState("");
+  const [showListForm, setShowListForm] = useState(false);
 
   const activeList = lists.find((l) => l.id === activeListId) || null;
 
@@ -195,27 +196,13 @@ export default function TodoView({
               <h3 style={{ margin: 0 }}>{activeList.title}</h3>
             )}
             {activeList.created_by === currentUserId && (
-              <div style={{ display: "flex", gap: "0.25rem" }}>
-                <button
-                  className="btn btn--ghost"
-                  onClick={() => {
-                    setEditingListId(activeList.id);
-                    setEditingListTitle(activeList.title);
-                  }}
-                  style={{ padding: "0.4rem", display: "flex" }}
-                  aria-label="編集"
-                >
-                  <PencilIcon />
-                </button>
-                <button
-                  className="btn btn--ghost"
-                  onClick={() => handleDeleteList(activeList.id)}
-                  style={{ padding: "0.4rem", display: "flex" }}
-                  aria-label="削除"
-                >
-                  <TrashIcon />
-                </button>
-              </div>
+              <ThreeDotMenu
+                onEdit={() => {
+                  setEditingListId(activeList.id);
+                  setEditingListTitle(activeList.title);
+                }}
+                onDelete={() => handleDeleteList(activeList.id)}
+              />
             )}
           </div>
         </div>
@@ -293,19 +280,50 @@ export default function TodoView({
 
   return (
     <>
-      <form onSubmit={handleCreateList} style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input
-            className="input"
-            placeholder="新しいリスト..."
-            value={newListTitle}
-            onChange={(e) => setNewListTitle(e.target.value)}
-          />
-          <button className="btn" type="submit" disabled={!newListTitle.trim()}>
-            作成
-          </button>
-        </div>
-      </form>
+      {!showListForm ? (
+        <button
+          className="btn"
+          onClick={() => setShowListForm(true)}
+          style={{ width: "100%", marginBottom: "1rem" }}
+        >
+          + リスト
+        </button>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            handleCreateList(e);
+            setShowListForm(false);
+          }}
+          style={{ marginBottom: "1rem" }}
+        >
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              className="input"
+              placeholder="新しいリスト..."
+              value={newListTitle}
+              onChange={(e) => setNewListTitle(e.target.value)}
+              autoFocus
+            />
+            <button
+              className="btn"
+              type="submit"
+              disabled={!newListTitle.trim()}
+            >
+              作成
+            </button>
+            <button
+              className="btn btn--ghost"
+              type="button"
+              onClick={() => {
+                setShowListForm(false);
+                setNewListTitle("");
+              }}
+            >
+              キャンセル
+            </button>
+          </div>
+        </form>
+      )}
 
       {lists.length > 0 ? (
         lists.map((list) => (
@@ -333,17 +351,9 @@ export default function TodoView({
               </span>
             </span>
             {list.created_by === currentUserId && (
-              <button
-                className="btn btn--ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteList(list.id);
-                }}
-                style={{ padding: "0.4rem", display: "flex" }}
-                aria-label="削除"
-              >
-                <TrashIcon />
-              </button>
+              <div onClick={(e) => e.stopPropagation()}>
+                <ThreeDotMenu onDelete={() => handleDeleteList(list.id)} />
+              </div>
             )}
           </div>
         ))
@@ -422,26 +432,14 @@ function TodoItemCard({
         </span>
       )}
       {item.created_by === currentUserId && (
-        <div style={{ display: "flex", gap: "0.25rem", flexShrink: 0 }}>
-          <button
-            className="btn btn--ghost"
-            onClick={() => {
+        <div style={{ flexShrink: 0 }}>
+          <ThreeDotMenu
+            onEdit={() => {
               setEditingItemId(item.id);
               setEditingItemTitle(item.title);
             }}
-            style={{ padding: "0.3rem", display: "flex" }}
-            aria-label="編集"
-          >
-            <PencilIcon size={14} />
-          </button>
-          <button
-            className="btn btn--ghost"
-            onClick={() => onDelete(item.id)}
-            style={{ padding: "0.3rem", display: "flex" }}
-            aria-label="削除"
-          >
-            <TrashIcon size={14} />
-          </button>
+            onDelete={() => onDelete(item.id)}
+          />
         </div>
       )}
     </div>

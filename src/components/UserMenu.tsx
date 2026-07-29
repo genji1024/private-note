@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { UserIcon, LogOutIcon, SettingsIcon } from "@/components/Icons";
 
 export default function UserMenu({
   displayName,
@@ -93,7 +94,9 @@ export default function UserMenu({
           <button
             onClick={() => router.push("/profile")}
             style={{
-              display: "block",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
               width: "100%",
               padding: "0.6rem 1rem",
               background: "none",
@@ -104,13 +107,16 @@ export default function UserMenu({
               color: "var(--fg)",
             }}
           >
+            <UserIcon size={16} />
             プロフィール
           </button>
           {username === "genji" && (
             <button
               onClick={() => router.push("/admin")}
               style={{
-                display: "block",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
                 width: "100%",
                 padding: "0.6rem 1rem",
                 background: "none",
@@ -121,13 +127,16 @@ export default function UserMenu({
                 color: "var(--fg)",
               }}
             >
+              <SettingsIcon size={16} />
               Admin
             </button>
           )}
           <button
             onClick={handleLogout}
             style={{
-              display: "block",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
               width: "100%",
               padding: "0.6rem 1rem",
               background: "none",
@@ -139,6 +148,7 @@ export default function UserMenu({
               color: "var(--fg)",
             }}
           >
+            <LogOutIcon size={16} />
             ログアウト
           </button>
         </div>

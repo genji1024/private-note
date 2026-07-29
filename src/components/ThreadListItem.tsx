@@ -1,7 +1,7 @@
 "use client";
 
 import type { Thread } from "@/lib/types";
-import { TrashIcon } from "@/components/Icons";
+import ThreeDotMenu from "@/components/ThreeDotMenu";
 
 export default function ThreadListItem({
   thread,
@@ -35,6 +35,22 @@ export default function ThreadListItem({
         <h3 style={{ marginBottom: "0.25rem", fontSize: "1.1rem" }}>
           {thread.title}
         </h3>
+        {thread.description && (
+          <p
+            style={{
+              color: "#555",
+              fontSize: "0.85rem",
+              marginBottom: "0.25rem",
+              whiteSpace: "pre-wrap",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {thread.description}
+          </p>
+        )}
         <p style={{ color: "#666", fontSize: "0.85rem" }}>
           {thread.author_name} ·{" "}
           {new Date(thread.created_at).toLocaleString("ja-JP")} · コメント{" "}
@@ -42,14 +58,9 @@ export default function ThreadListItem({
         </p>
       </div>
       {isCreator && !thread.is_default && (
-        <button
-          className="btn btn--ghost"
-          onClick={handleDelete}
-          style={{ padding: "0.4rem", display: "flex", alignItems: "center" }}
-          aria-label="削除"
-        >
-          <TrashIcon />
-        </button>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ThreeDotMenu onDelete={handleDelete} />
+        </div>
       )}
     </div>
   );

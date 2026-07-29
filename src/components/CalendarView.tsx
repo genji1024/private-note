@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { CalendarEvent } from "@/lib/types";
+import type { CalendarEvent, UserProfile } from "@/lib/types";
+import ThreeDotMenu from "@/components/ThreeDotMenu";
 
 export default function CalendarView({
   initialEvents,
@@ -44,31 +45,16 @@ export default function CalendarView({
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "0.75rem",
+      <button
+        className="btn"
+        onClick={() => {
+          setEditingEvent(null);
+          setShowForm(true);
         }}
+        style={{ width: "100%", marginBottom: "1rem" }}
       >
-        <button
-          onClick={() => {
-            setEditingEvent(null);
-            setShowForm(true);
-          }}
-          style={{
-            background: "none",
-            border: "1px solid var(--accent)",
-            color: "var(--accent)",
-            borderRadius: "4px",
-            padding: "0.25rem 0.75rem",
-            cursor: "pointer",
-            fontSize: "0.9rem",
-          }}
-        >
-          + 予定
-        </button>
-      </div>
+        + 予定
+      </button>
 
       {error && (
         <div
@@ -187,36 +173,7 @@ function EventCard({
             })}`}
         </div>
       </div>
-      {isOwner && (
-        <div style={{ display: "flex", gap: "0.25rem" }}>
-          <button
-            onClick={onEdit}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--accent)",
-              fontSize: "0.8rem",
-              padding: "0.25rem",
-            }}
-          >
-            ✏️
-          </button>
-          <button
-            onClick={onDelete}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#c00",
-              fontSize: "0.8rem",
-              padding: "0.25rem",
-            }}
-          >
-            🗑️
-          </button>
-        </div>
-      )}
+      {isOwner && <ThreeDotMenu onEdit={onEdit} onDelete={onDelete} />}
     </div>
   );
 }

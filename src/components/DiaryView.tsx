@@ -337,6 +337,7 @@ function DiaryEntry({
               reactions={reactions}
               types={reactionTypes}
               currentUserId={currentUserId}
+              userProfiles={userProfiles}
             />
           </div>
         </>
