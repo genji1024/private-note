@@ -1,7 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { CalendarEvent } from "@/lib/types";
+
+const STORAGE_KEY = "countdown-position";
+const DEFAULT_POSITION = { x: -1, y: -1 };
+
+function loadPosition() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+        return parsed;
+      }
+    }
+  } catch {}
+  return DEFAULT_POSITION;
+}
+
+function savePosition(x: number, y: number) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ x, y }));
+  } catch {}
+}
 
 function calcCountdown(target: Date) {
   const diff = target.getTime() - Date.now();
@@ -58,6 +80,32 @@ function CountdownFloat({
   onClick: () => void;
 }) {
   const [countdown, setCountdown] = useState(() => calcCountdown(startAt));
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{
+    dragging: boolean;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    moved: boolean;
+  }>({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    origX: 0,
+    origY: 0,
+    moved: false,
+  });
+  const elRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = loadPosition();
+    if (saved.x === -1 && saved.y === -1) {
+      setPos(null);
+    } else {
+      setPos(saved);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,26 +114,129 @@ function CountdownFloat({
     return () => clearInterval(timer);
   }, [startAt]);
 
+  const resolveOrigin = useCallback(() => {
+    const el = elRef.current;
+    if (!el) return { origX: 0, origY: 0 };
+    const rect = el.getBoundingClientRect();
+    return { origX: rect.left, origY: rect.top };
+  }, []);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      const { origX, origY } = resolveOrigin();
+      dragRef.current = {
+        dragging: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        origX,
+        origY,
+        moved: false,
+      };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [resolveOrigin]
+  );
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    const d = dragRef.current;
+    if (!d.dragging) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) d.moved = true;
+    const newX = d.origX + dx;
+    const newY = d.origY + dy;
+    const el = elRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const w = rect.width;
+      const h = rect.height;
+      const distTop = newY;
+      const distBottom = vh - (newY + h);
+      const distLeft = newX;
+      const distRight = vw - (newX + w);
+      const minDist = Math.min(distTop, distBottom, distLeft, distRight);
+      let clampedX = newX;
+      let clampedY = newY;
+      if (minDist === distBottom) {
+        clampedY = vh - h - 8;
+        clampedX = Math.max(8, Math.min(newX, vw - w - 8));
+      } else if (minDist === distTop) {
+        clampedY = 8;
+        clampedX = Math.max(8, Math.min(newX, vw - w - 8));
+      } else if (minDist === distRight) {
+        clampedX = vw - w - 8;
+        clampedY = Math.max(8, Math.min(newY, vh - h - 8));
+      } else {
+        clampedX = 8;
+        clampedY = Math.max(8, Math.min(newY, vh - h - 8));
+      }
+      setPos({ x: clampedX, y: clampedY });
+    } else {
+      setPos({ x: newX, y: newY });
+    }
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      const d = dragRef.current;
+      d.dragging = false;
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      if (d.moved && pos) {
+        savePosition(pos.x, pos.y);
+      }
+    },
+    [pos]
+  );
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (dragRef.current.moved) {
+        e.stopPropagation();
+        dragRef.current.moved = false;
+        return;
+      }
+      onClick();
+    },
+    [onClick]
+  );
+
   if (!countdown) return null;
+
+  const style: React.CSSProperties = {
+    position: "fixed",
+    background: "var(--accent)",
+    color: "#fff",
+    borderRadius: "12px",
+    padding: "0.75rem 1rem",
+    cursor: "grab",
+    zIndex: 999,
+    boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+    fontSize: "0.85rem",
+    textAlign: "center",
+    minWidth: "120px",
+    touchAction: "none",
+    userSelect: "none",
+  };
+
+  if (pos) {
+    style.left = `${pos.x}px`;
+    style.top = `${pos.y}px`;
+  } else {
+    style.bottom = "1rem";
+    style.right = "1rem";
+  }
 
   return (
     <div
-      onClick={onClick}
-      style={{
-        position: "fixed",
-        bottom: "1rem",
-        right: "1rem",
-        background: "var(--accent)",
-        color: "#fff",
-        borderRadius: "12px",
-        padding: "0.75rem 1rem",
-        cursor: "pointer",
-        zIndex: 999,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
-        fontSize: "0.85rem",
-        textAlign: "center",
-        minWidth: "120px",
-      }}
+      ref={elRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onClick={handleClick}
+      style={style}
     >
       <div
         style={{ fontSize: "0.7rem", opacity: 0.8, marginBottom: "0.15rem" }}
