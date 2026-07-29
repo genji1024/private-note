@@ -19,13 +19,31 @@ export async function POST(req: NextRequest) {
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { title } = await req.json();
+  const { title, description } = await req.json();
   const createdBy = (session.user as any).id;
 
   const { error } = await supabaseAdmin.from("threads").insert({
     title,
+    description: description || "",
     created_by: createdBy,
   });
+
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
+export async function PUT(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id, description } = await req.json();
+
+  const { error } = await supabaseAdmin
+    .from("threads")
+    .update({ description: description || "" })
+    .eq("id", id);
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -35,6 +35,22 @@ export default function ThreadListItem({
         <h3 style={{ marginBottom: "0.25rem", fontSize: "1.1rem" }}>
           {thread.title}
         </h3>
+        {thread.description && (
+          <p
+            style={{
+              color: "#555",
+              fontSize: "0.85rem",
+              marginBottom: "0.25rem",
+              whiteSpace: "pre-wrap",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {thread.description}
+          </p>
+        )}
         <p style={{ color: "#666", fontSize: "0.85rem" }}>
           {thread.author_name} ·{" "}
           {new Date(thread.created_at).toLocaleString("ja-JP")} · コメント{" "}

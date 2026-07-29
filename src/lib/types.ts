@@ -16,6 +16,7 @@ export type User = {
 export type Thread = {
   id: string;
   title: string;
+  description: string;
   created_by: string;
   author_name: string;
   comment_count: number;

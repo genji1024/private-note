@@ -142,33 +142,19 @@ export default function HomePageClient({
                 comments={selectedNote.comments}
                 currentUserId={currentUserId}
                 threadId={selectedNote.thread.id}
+                threadDescription={selectedNote.thread.description}
                 userProfiles={userProfiles}
               />
             </>
           ) : (
             <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginBottom: "0.75rem",
-                }}
+              <button
+                className="btn"
+                onClick={() => setShowNewThreadForm(true)}
+                style={{ width: "100%", marginBottom: "1rem" }}
               >
-                <button
-                  onClick={() => setShowNewThreadForm(true)}
-                  style={{
-                    background: "none",
-                    border: "1px solid var(--accent)",
-                    color: "var(--accent)",
-                    borderRadius: "4px",
-                    padding: "0.25rem 0.75rem",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  + {tabNotes}
-                </button>
-              </div>
+                + {tabNotes}
+              </button>
               {showNewThreadForm && <NewThreadForm />}
               {threadsWithComments.length > 0 ? (
                 threadsWithComments.map(({ thread }) => (
