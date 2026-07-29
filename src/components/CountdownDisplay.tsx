@@ -146,7 +146,37 @@ function CountdownFloat({
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) d.moved = true;
     const newX = d.origX + dx;
     const newY = d.origY + dy;
-    setPos({ x: newX, y: newY });
+    const el = elRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const w = rect.width;
+      const h = rect.height;
+      const distTop = newY;
+      const distBottom = vh - (newY + h);
+      const distLeft = newX;
+      const distRight = vw - (newX + w);
+      const minDist = Math.min(distTop, distBottom, distLeft, distRight);
+      let clampedX = newX;
+      let clampedY = newY;
+      if (minDist === distBottom) {
+        clampedY = vh - h - 8;
+        clampedX = Math.max(8, Math.min(newX, vw - w - 8));
+      } else if (minDist === distTop) {
+        clampedY = 8;
+        clampedX = Math.max(8, Math.min(newX, vw - w - 8));
+      } else if (minDist === distRight) {
+        clampedX = vw - w - 8;
+        clampedY = Math.max(8, Math.min(newY, vh - h - 8));
+      } else {
+        clampedX = 8;
+        clampedY = Math.max(8, Math.min(newY, vh - h - 8));
+      }
+      setPos({ x: clampedX, y: clampedY });
+    } else {
+      setPos({ x: newX, y: newY });
+    }
   }, []);
 
   const handlePointerUp = useCallback(
@@ -155,32 +185,7 @@ function CountdownFloat({
       d.dragging = false;
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
       if (d.moved && pos) {
-        const el = elRef.current;
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
-          const distTop = rect.top;
-          const distBottom = vh - rect.bottom;
-          const distLeft = rect.left;
-          const distRight = vw - rect.right;
-          const minDist = Math.min(distTop, distBottom, distLeft, distRight);
-          let snappedX = rect.left;
-          let snappedY = rect.top;
-          if (minDist === distBottom) {
-            snappedY = vh - rect.height - 8;
-          } else if (minDist === distTop) {
-            snappedY = 8;
-          } else if (minDist === distRight) {
-            snappedX = vw - rect.width - 8;
-          } else {
-            snappedX = 8;
-          }
-          snappedX = Math.max(8, Math.min(snappedX, vw - rect.width - 8));
-          snappedY = Math.max(8, Math.min(snappedY, vh - rect.height - 8));
-          setPos({ x: snappedX, y: snappedY });
-          savePosition(snappedX, snappedY);
-        }
+        savePosition(pos.x, pos.y);
       }
     },
     [pos]
