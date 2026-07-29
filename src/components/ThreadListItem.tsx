@@ -1,7 +1,7 @@
 "use client";
 
 import type { Thread } from "@/lib/types";
-import { TrashIcon } from "@/components/Icons";
+import ThreeDotMenu from "@/components/ThreeDotMenu";
 
 export default function ThreadListItem({
   thread,
@@ -58,14 +58,9 @@ export default function ThreadListItem({
         </p>
       </div>
       {isCreator && !thread.is_default && (
-        <button
-          className="btn btn--ghost"
-          onClick={handleDelete}
-          style={{ padding: "0.4rem", display: "flex", alignItems: "center" }}
-          aria-label="削除"
-        >
-          <TrashIcon />
-        </button>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ThreeDotMenu onDelete={handleDelete} />
+        </div>
       )}
     </div>
   );

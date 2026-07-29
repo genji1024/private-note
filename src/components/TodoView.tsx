@@ -19,6 +19,7 @@ export default function TodoView({
   const [editingListTitle, setEditingListTitle] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemTitle, setEditingItemTitle] = useState("");
+  const [showListForm, setShowListForm] = useState(false);
 
   const activeList = lists.find((l) => l.id === activeListId) || null;
 
@@ -279,19 +280,50 @@ export default function TodoView({
 
   return (
     <>
-      <form onSubmit={handleCreateList} style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input
-            className="input"
-            placeholder="新しいリスト..."
-            value={newListTitle}
-            onChange={(e) => setNewListTitle(e.target.value)}
-          />
-          <button className="btn" type="submit" disabled={!newListTitle.trim()}>
-            作成
-          </button>
-        </div>
-      </form>
+      {!showListForm ? (
+        <button
+          className="btn"
+          onClick={() => setShowListForm(true)}
+          style={{ width: "100%", marginBottom: "1rem" }}
+        >
+          + リスト
+        </button>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            handleCreateList(e);
+            setShowListForm(false);
+          }}
+          style={{ marginBottom: "1rem" }}
+        >
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              className="input"
+              placeholder="新しいリスト..."
+              value={newListTitle}
+              onChange={(e) => setNewListTitle(e.target.value)}
+              autoFocus
+            />
+            <button
+              className="btn"
+              type="submit"
+              disabled={!newListTitle.trim()}
+            >
+              作成
+            </button>
+            <button
+              className="btn btn--ghost"
+              type="button"
+              onClick={() => {
+                setShowListForm(false);
+                setNewListTitle("");
+              }}
+            >
+              キャンセル
+            </button>
+          </div>
+        </form>
+      )}
 
       {lists.length > 0 ? (
         lists.map((list) => (

@@ -14,19 +14,11 @@ export default function ReactionDisplay({
   currentUserId: string;
   userProfiles?: Record<string, UserProfile>;
 }) {
-  const [tooltipTypeId, setTooltipTypeId] = useState<number | null>(null);
+  const [tooltipUserId, setTooltipUserId] = useState<string | null>(null);
 
   if (reactions.length === 0) return null;
 
   const typeMap = new Map(types.map((t) => [t.id, t]));
-  const myReaction = reactions.find((r) => r.user_id === currentUserId);
-
-  const grouped = new Map<number, CommentReaction[]>();
-  for (const r of reactions) {
-    const list = grouped.get(r.reaction_type_id) || [];
-    list.push(r);
-    grouped.set(r.reaction_type_id, list);
-  }
 
   return (
     <div
@@ -37,19 +29,15 @@ export default function ReactionDisplay({
         marginTop: "0.5rem",
       }}
     >
-      {Array.from(grouped.entries()).map(([typeId, groupReactions]) => {
-        const rt = typeMap.get(typeId);
+      {reactions.map((r) => {
+        const rt = typeMap.get(r.reaction_type_id);
         if (!rt) return null;
-        const isMine = myReaction?.reaction_type_id === typeId;
-        const userNames = groupReactions
-          .map((r) => {
-            const profile = userProfiles?.[r.user_id];
-            return profile?.display_name || r.user_id;
-          })
-          .join(", ");
+        const isMine = r.user_id === currentUserId;
+        const profile = userProfiles?.[r.user_id];
+        const userName = profile?.display_name || r.user_id;
         return (
           <span
-            key={typeId}
+            key={r.id}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -65,9 +53,9 @@ export default function ReactionDisplay({
               cursor: "default",
               position: "relative",
             }}
-            title={userNames}
-            onMouseEnter={() => setTooltipTypeId(typeId)}
-            onMouseLeave={() => setTooltipTypeId(null)}
+            title={userName}
+            onMouseEnter={() => setTooltipUserId(r.user_id)}
+            onMouseLeave={() => setTooltipUserId(null)}
           >
             {rt.type === "emoji" ? (
               <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>
@@ -85,7 +73,7 @@ export default function ReactionDisplay({
                 }}
               />
             )}
-            {tooltipTypeId === typeId && userNames && (
+            {tooltipUserId === r.user_id && (
               <span
                 style={{
                   position: "absolute",
@@ -103,7 +91,7 @@ export default function ReactionDisplay({
                   pointerEvents: "none",
                 }}
               >
-                {userNames}
+                {userName}
               </span>
             )}
           </span>
