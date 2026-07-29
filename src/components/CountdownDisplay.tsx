@@ -155,7 +155,32 @@ function CountdownFloat({
       d.dragging = false;
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
       if (d.moved && pos) {
-        savePosition(pos.x, pos.y);
+        const el = elRef.current;
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const distTop = rect.top;
+          const distBottom = vh - rect.bottom;
+          const distLeft = rect.left;
+          const distRight = vw - rect.right;
+          const minDist = Math.min(distTop, distBottom, distLeft, distRight);
+          let snappedX = rect.left;
+          let snappedY = rect.top;
+          if (minDist === distBottom) {
+            snappedY = vh - rect.height - 8;
+          } else if (minDist === distTop) {
+            snappedY = 8;
+          } else if (minDist === distRight) {
+            snappedX = vw - rect.width - 8;
+          } else {
+            snappedX = 8;
+          }
+          snappedX = Math.max(8, Math.min(snappedX, vw - rect.width - 8));
+          snappedY = Math.max(8, Math.min(snappedY, vh - rect.height - 8));
+          setPos({ x: snappedX, y: snappedY });
+          savePosition(snappedX, snappedY);
+        }
       }
     },
     [pos]
