@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { CalendarEvent, UserProfile } from "@/lib/types";
 import ThreeDotMenu from "@/components/ThreeDotMenu";
 
@@ -15,6 +15,9 @@ export default function CalendarView({
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  const listRef = useRef<HTMLDivElement>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -43,6 +46,66 @@ export default function CalendarView({
     }
   }
 
+  const now = new Date();
+  const isCurrentMonth =
+    viewYear === now.getFullYear() && viewMonth === now.getMonth();
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
+    "ja-JP",
+    { year: "numeric", month: "long" }
+  );
+
+  function goToMonth(delta: number) {
+    let year = viewYear;
+    let month = viewMonth + delta;
+    if (month < 0) {
+      month += 12;
+      year -= 1;
+    } else if (month > 11) {
+      month -= 12;
+      year += 1;
+    }
+    setViewYear(year);
+    setViewMonth(month);
+  }
+
+  const monthEvents = events
+    .filter((event) => {
+      const d = new Date(event.start_at);
+      return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+    })
+    .sort((a, b) => {
+      const aTime = new Date(a.start_at).getTime();
+      const bTime = new Date(b.start_at).getTime();
+      return aTime - bTime;
+    });
+
+  useEffect(() => {
+    const listEl = listRef.current;
+    if (!listEl) return;
+    const nowTime = Date.now();
+    const monthAsc = events
+      .filter((event) => {
+        const d = new Date(event.start_at);
+        return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+      );
+    const firstUnfinished = monthAsc.find((event) => {
+      const end = event.end_at
+        ? new Date(event.end_at)
+        : new Date(event.start_at);
+      return end.getTime() >= nowTime;
+    });
+    const target = firstUnfinished
+      ? listEl.querySelector<HTMLElement>(
+          `[data-event-id="${firstUnfinished.id}"]`
+        )
+      : null;
+    (target ?? listEl).scrollIntoView({ block: "start" });
+  }, [events, viewYear, viewMonth]);
+
   return (
     <div>
       <button
@@ -56,6 +119,17 @@ export default function CalendarView({
         + 予定
       </button>
 
+      <MonthNav
+        monthLabel={monthLabel}
+        isCurrentMonth={isCurrentMonth}
+        onPrev={() => goToMonth(-1)}
+        onNext={() => goToMonth(1)}
+        onReset={() => {
+          setViewYear(now.getFullYear());
+          setViewMonth(now.getMonth());
+        }}
+      />
+
       {error && (
         <div
           style={{ color: "red", fontSize: "0.85rem", marginBottom: "0.5rem" }}
@@ -64,18 +138,20 @@ export default function CalendarView({
         </div>
       )}
 
-      {events.length === 0 ? (
+      {monthEvents.length === 0 ? (
         <p style={{ color: "#999", fontSize: "0.9rem" }}>
-          予定はまだありません
+          {isCurrentMonth ? "予定はまだありません" : "この月の予定はありません"}
         </p>
       ) : (
         <div
+          ref={listRef}
           style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
         >
-          {events.map((event) => (
+          {monthEvents.map((event) => (
             <EventCard
               key={event.id}
               event={event}
+              finished={isEventFinished(event, now)}
               currentUserId={currentUserId}
               onEdit={() => {
                 setEditingEvent(event);
@@ -105,13 +181,74 @@ export default function CalendarView({
   );
 }
 
+function isEventFinished(event: CalendarEvent, now: Date): boolean {
+  const end = event.end_at ? new Date(event.end_at) : new Date(event.start_at);
+  return end.getTime() < now.getTime();
+}
+
+function MonthNav({
+  monthLabel,
+  isCurrentMonth,
+  onPrev,
+  onNext,
+  onReset,
+}: {
+  monthLabel: string;
+  isCurrentMonth: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "0.5rem",
+        marginBottom: "1rem",
+      }}
+    >
+      <button className="btn btn--ghost" onClick={onPrev}>
+        ◀ 先月
+      </button>
+      <div style={{ textAlign: "center", flex: 1 }}>
+        <div style={{ fontWeight: "bold", fontSize: "1.05rem" }}>
+          {monthLabel}
+        </div>
+        {!isCurrentMonth && (
+          <button
+            onClick={onReset}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--accent)",
+              cursor: "pointer",
+              fontSize: "0.75rem",
+              padding: 0,
+              textDecoration: "underline",
+            }}
+          >
+            今月へ
+          </button>
+        )}
+      </div>
+      <button className="btn btn--ghost" onClick={onNext}>
+        来月 ▶
+      </button>
+    </div>
+  );
+}
+
 function EventCard({
   event,
+  finished,
   currentUserId,
   onEdit,
   onDelete,
 }: {
   event: CalendarEvent;
+  finished: boolean;
   currentUserId: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -122,6 +259,7 @@ function EventCard({
 
   return (
     <div
+      data-event-id={event.id}
       style={{
         border: "1px solid var(--border)",
         borderRadius: "8px",
@@ -129,6 +267,8 @@ function EventCard({
         display: "flex",
         gap: "0.75rem",
         alignItems: "flex-start",
+        opacity: finished ? 0.5 : 1,
+        filter: finished ? "grayscale(1)" : "none",
       }}
     >
       <div
@@ -172,6 +312,21 @@ function EventCard({
               minute: "2-digit",
             })}`}
         </div>
+        {finished && (
+          <span
+            style={{
+              display: "inline-block",
+              fontSize: "0.7rem",
+              color: "#999",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              padding: "0 0.35rem",
+              marginTop: "0.25rem",
+            }}
+          >
+            終了
+          </span>
+        )}
       </div>
       {isOwner && <ThreeDotMenu onEdit={onEdit} onDelete={onDelete} />}
     </div>
