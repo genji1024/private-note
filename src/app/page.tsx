@@ -9,6 +9,7 @@ import type {
   TodoList,
   TodoItem,
   CalendarEvent,
+  CalendarEventException,
 } from "@/lib/types";
 import UserMenu from "@/components/UserMenu";
 import HomePageClient from "@/components/HomePageClient";
@@ -99,6 +100,12 @@ export default async function HomePage() {
     .order("start_at", { ascending: true });
   const calendarEvents = (calendarEventsData as CalendarEvent[]) || [];
 
+  const { data: calendarExceptionsData } = await supabaseAdmin
+    .from("calendar_event_exceptions")
+    .select("*");
+  const calendarExceptions =
+    (calendarExceptionsData as CalendarEventException[]) || [];
+
   return (
     <div className="container">
       <div
@@ -132,6 +139,7 @@ export default async function HomePage() {
         tabCalendar={settings?.tab_calendar || "カレンダー"}
         todoLists={todoLists}
         calendarEvents={calendarEvents}
+        calendarExceptions={calendarExceptions}
       />
     </div>
   );

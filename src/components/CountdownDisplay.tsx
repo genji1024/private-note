@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { CalendarEvent } from "@/lib/types";
+import type { CalendarEvent, CalendarEventException } from "@/lib/types";
+import { findNextOccurrence } from "@/lib/recurrence";
 
 const STORAGE_KEY = "countdown-position";
 const DEFAULT_POSITION = { x: -1, y: -1 };
@@ -36,33 +37,39 @@ function calcCountdown(target: Date) {
 }
 
 export default function CountdownDisplay({
-  events: initialEvents,
+  events,
+  exceptions,
 }: {
   events: CalendarEvent[];
+  exceptions: CalendarEventException[];
 }) {
-  const [events] = useState(initialEvents);
+  const [eventsState] = useState(events);
+  const [exceptionsState] = useState(exceptions);
   const [showPopup, setShowPopup] = useState(false);
 
   const now = new Date();
   const upcoming =
-    events
-      .map((e) => ({ event: e, startAt: new Date(e.start_at) }))
-      .filter(({ startAt }) => startAt > now)
-      .sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0] || null;
+    eventsState
+      .map((e) => findNextOccurrence(e, exceptionsState, now))
+      .filter((inst): inst is NonNullable<typeof inst> => inst !== null)
+      .sort(
+        (a, b) =>
+          new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+      )[0] || null;
 
   if (!upcoming) return null;
 
   return (
     <>
       <CountdownFloat
-        event={upcoming.event}
-        startAt={upcoming.startAt}
+        event={upcoming}
+        startAt={new Date(upcoming.start_at)}
         onClick={() => setShowPopup(true)}
       />
       {showPopup && (
         <CountdownPopup
-          event={upcoming.event}
-          startAt={upcoming.startAt}
+          event={upcoming}
+          startAt={new Date(upcoming.start_at)}
           onClose={() => setShowPopup(false)}
         />
       )}
