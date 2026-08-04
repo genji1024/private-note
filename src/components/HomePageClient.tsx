@@ -8,6 +8,7 @@ import type {
   TodoList,
   TodoItem,
   CalendarEvent,
+  CalendarEventException,
 } from "@/lib/types";
 import DiaryView from "@/components/DiaryView";
 import ThreadView from "@/components/ThreadView";
@@ -32,6 +33,7 @@ export default function HomePageClient({
   tabCalendar,
   todoLists,
   calendarEvents,
+  calendarExceptions,
 }: {
   diaryThread: Thread | null;
   diaryEntries: ThreadComment[];
@@ -47,6 +49,7 @@ export default function HomePageClient({
   tabCalendar: string;
   todoLists: (TodoList & { items: TodoItem[] })[];
   calendarEvents: CalendarEvent[];
+  calendarExceptions: CalendarEventException[];
 }) {
   const [activeTab, setActiveTab] = useState<string>("diary");
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -116,6 +119,7 @@ export default function HomePageClient({
       {activeTab === "calendar" && (
         <CalendarView
           initialEvents={calendarEvents}
+          initialExceptions={calendarExceptions}
           currentUserId={currentUserId}
         />
       )}
@@ -179,7 +183,10 @@ export default function HomePageClient({
         </>
       )}
 
-      <CountdownDisplay events={calendarEvents} />
+      <CountdownDisplay
+        events={calendarEvents}
+        exceptions={calendarExceptions}
+      />
     </>
   );
 }

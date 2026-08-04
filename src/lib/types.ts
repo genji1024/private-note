@@ -83,8 +83,29 @@ export type CalendarEvent = {
   start_at: string;
   end_at: string | null;
   image_url: string | null;
+  recurrence_rule: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type RecurrenceFrequency = "daily" | "weekly" | "monthly";
+
+export type RecurrenceRule = {
+  frequency: RecurrenceFrequency;
+  interval: number;
+  until: string | null;
+};
+
+export type CalendarEventException = {
+  id: string;
+  event_id: string;
+  exception_date: string;
+  created_at: string;
+};
+
+export type CalendarEventInstance = CalendarEvent & {
+  parent_id: string;
+  is_recurring: boolean;
 };
 
 // Backward-compatible alias: Entry is now a ThreadComment in the diary thread

@@ -1,19 +1,34 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import type { CalendarEvent, UserProfile } from "@/lib/types";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import type {
+  CalendarEvent,
+  CalendarEventException,
+  CalendarEventInstance,
+} from "@/lib/types";
+import {
+  expandEventsForMonth,
+  getMaxDisplayMonth,
+  parseRecurrenceRule,
+} from "@/lib/recurrence";
 import ThreeDotMenu from "@/components/ThreeDotMenu";
 
 export default function CalendarView({
   initialEvents,
+  initialExceptions,
   currentUserId,
 }: {
   initialEvents: CalendarEvent[];
+  initialExceptions: CalendarEventException[];
   currentUserId: string;
 }) {
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
+  const [exceptions, setExceptions] =
+    useState<CalendarEventException[]>(initialExceptions);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [deletingInstance, setDeletingInstance] =
+    useState<CalendarEventInstance | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
@@ -24,20 +39,25 @@ export default function CalendarView({
       const res = await fetch("/api/calendar/events");
       if (res.ok) {
         const data = await res.json();
-        setEvents(data);
+        setEvents(data.events);
+        setExceptions(data.exceptions);
       }
     } catch {
       // ignore
     }
   }, []);
 
-  async function handleDelete(id: string) {
+  async function handleDelete(instance: CalendarEventInstance) {
+    if (instance.is_recurring) {
+      setDeletingInstance(instance);
+      return;
+    }
     if (!confirm("この予定を削除しますか？")) return;
     try {
       const res = await fetch("/api/calendar/events", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: instance.id }),
       });
       if (!res.ok) throw new Error("削除に失敗しました");
       fetchEvents();
@@ -46,7 +66,27 @@ export default function CalendarView({
     }
   }
 
-  const now = new Date();
+  async function handleDeleteRecurring(mode: "single" | "future" | "all") {
+    if (!deletingInstance) return;
+    try {
+      const res = await fetch("/api/calendar/events", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: deletingInstance.parent_id,
+          delete_mode: mode,
+          occurrence_date: deletingInstance.start_at,
+        }),
+      });
+      if (!res.ok) throw new Error("削除に失敗しました");
+      setDeletingInstance(null);
+      fetchEvents();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "削除に失敗しました");
+    }
+  }
+
+  const now = useMemo(() => new Date(), []);
   const isCurrentMonth =
     viewYear === now.getFullYear() && viewMonth === now.getMonth();
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
@@ -54,7 +94,16 @@ export default function CalendarView({
     { year: "numeric", month: "long" }
   );
 
+  const maxDisplayMonth = useMemo(
+    () => getMaxDisplayMonth(events, now),
+    [events, now]
+  );
+  const canGoNext = !(
+    viewYear === maxDisplayMonth.year && viewMonth === maxDisplayMonth.month
+  );
+
   function goToMonth(delta: number) {
+    if (delta > 0 && !canGoNext) return;
     let year = viewYear;
     let month = viewMonth + delta;
     if (month < 0) {
@@ -68,31 +117,16 @@ export default function CalendarView({
     setViewMonth(month);
   }
 
-  const monthEvents = events
-    .filter((event) => {
-      const d = new Date(event.start_at);
-      return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
-    })
-    .sort((a, b) => {
-      const aTime = new Date(a.start_at).getTime();
-      const bTime = new Date(b.start_at).getTime();
-      return aTime - bTime;
-    });
+  const monthEvents = useMemo(
+    () => expandEventsForMonth(events, exceptions, viewYear, viewMonth),
+    [events, exceptions, viewYear, viewMonth]
+  );
 
   useEffect(() => {
     const listEl = listRef.current;
     if (!listEl) return;
     const nowTime = Date.now();
-    const monthAsc = events
-      .filter((event) => {
-        const d = new Date(event.start_at);
-        return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
-      })
-      .sort(
-        (a, b) =>
-          new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-      );
-    const firstUnfinished = monthAsc.find((event) => {
+    const firstUnfinished = monthEvents.find((event) => {
       const end = event.end_at
         ? new Date(event.end_at)
         : new Date(event.start_at);
@@ -104,7 +138,7 @@ export default function CalendarView({
         )
       : null;
     (target ?? listEl).scrollIntoView({ block: "start" });
-  }, [events, viewYear, viewMonth]);
+  }, [monthEvents]);
 
   return (
     <div>
@@ -122,6 +156,7 @@ export default function CalendarView({
       <MonthNav
         monthLabel={monthLabel}
         isCurrentMonth={isCurrentMonth}
+        canGoNext={canGoNext}
         onPrev={() => goToMonth(-1)}
         onNext={() => goToMonth(1)}
         onReset={() => {
@@ -147,17 +182,24 @@ export default function CalendarView({
           ref={listRef}
           style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
         >
-          {monthEvents.map((event) => (
+          {monthEvents.map((instance) => (
             <EventCard
-              key={event.id}
-              event={event}
-              finished={isEventFinished(event, now)}
+              key={instance.id}
+              instance={instance}
+              finished={isEventFinished(instance, now)}
               currentUserId={currentUserId}
               onEdit={() => {
-                setEditingEvent(event);
+                if (instance.is_recurring) {
+                  const parent = events.find(
+                    (e) => e.id === instance.parent_id
+                  );
+                  setEditingEvent(parent || null);
+                } else {
+                  setEditingEvent(instance);
+                }
                 setShowForm(true);
               }}
-              onDelete={() => handleDelete(event.id)}
+              onDelete={() => handleDelete(instance)}
             />
           ))}
         </div>
@@ -177,11 +219,19 @@ export default function CalendarView({
           }}
         />
       )}
+
+      {deletingInstance && (
+        <DeleteConfirmPopup
+          instance={deletingInstance}
+          onConfirm={handleDeleteRecurring}
+          onClose={() => setDeletingInstance(null)}
+        />
+      )}
     </div>
   );
 }
 
-function isEventFinished(event: CalendarEvent, now: Date): boolean {
+function isEventFinished(event: CalendarEventInstance, now: Date): boolean {
   const end = event.end_at ? new Date(event.end_at) : new Date(event.start_at);
   return end.getTime() < now.getTime();
 }
@@ -189,12 +239,14 @@ function isEventFinished(event: CalendarEvent, now: Date): boolean {
 function MonthNav({
   monthLabel,
   isCurrentMonth,
+  canGoNext,
   onPrev,
   onNext,
   onReset,
 }: {
   monthLabel: string;
   isCurrentMonth: boolean;
+  canGoNext: boolean;
   onPrev: () => void;
   onNext: () => void;
   onReset: () => void;
@@ -233,7 +285,15 @@ function MonthNav({
           </button>
         )}
       </div>
-      <button className="btn btn--ghost" onClick={onNext}>
+      <button
+        className="btn btn--ghost"
+        onClick={onNext}
+        disabled={!canGoNext}
+        style={{
+          opacity: canGoNext ? 1 : 0.4,
+          cursor: canGoNext ? "pointer" : "not-allowed",
+        }}
+      >
         来月 ▶
       </button>
     </div>
@@ -241,25 +301,25 @@ function MonthNav({
 }
 
 function EventCard({
-  event,
+  instance,
   finished,
   currentUserId,
   onEdit,
   onDelete,
 }: {
-  event: CalendarEvent;
+  instance: CalendarEventInstance;
   finished: boolean;
   currentUserId: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const isOwner = event.author_id === currentUserId;
-  const startDate = new Date(event.start_at);
-  const endDate = event.end_at ? new Date(event.end_at) : null;
+  const isOwner = instance.author_id === currentUserId;
+  const startDate = new Date(instance.start_at);
+  const endDate = instance.end_at ? new Date(instance.end_at) : null;
 
   return (
     <div
-      data-event-id={event.id}
+      data-event-id={instance.id}
       style={{
         border: "1px solid var(--border)",
         borderRadius: "8px",
@@ -272,11 +332,7 @@ function EventCard({
       }}
     >
       <div
-        style={{
-          textAlign: "center",
-          minWidth: "3rem",
-          padding: "0.25rem",
-        }}
+        style={{ textAlign: "center", minWidth: "3rem", padding: "0.25rem" }}
       >
         <div style={{ fontSize: "0.7rem", color: "#999" }}>
           {startDate.toLocaleDateString("ja-JP", { month: "short" })}
@@ -286,14 +342,36 @@ function EventCard({
         </div>
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>
-          {event.title}
+        <div
+          style={{
+            fontWeight: "bold",
+            fontSize: "0.95rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.35rem",
+          }}
+        >
+          {instance.title}
+          {instance.is_recurring && (
+            <span
+              style={{
+                fontSize: "0.65rem",
+                color: "var(--accent)",
+                border: "1px solid var(--accent)",
+                borderRadius: "4px",
+                padding: "0 0.3rem",
+                fontWeight: "normal",
+              }}
+            >
+              繰り返し
+            </span>
+          )}
         </div>
-        {event.location && (
+        {instance.location && (
           <div
             style={{ fontSize: "0.8rem", color: "#999", marginTop: "0.15rem" }}
           >
-            {event.location}
+            {instance.location}
           </div>
         )}
         <div
@@ -333,6 +411,89 @@ function EventCard({
   );
 }
 
+function DeleteConfirmPopup({
+  instance,
+  onConfirm,
+  onClose,
+}: {
+  instance: CalendarEventInstance;
+  onConfirm: (mode: "single" | "future" | "all") => void;
+  onClose: () => void;
+}) {
+  const dateStr = new Date(instance.start_at).toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const btnStyle: React.CSSProperties = {
+    padding: "0.6rem 1rem",
+    border: "1px solid var(--border)",
+    borderRadius: "6px",
+    background: "#fff",
+    cursor: "pointer",
+    fontSize: "0.9rem",
+    textAlign: "left",
+    width: "100%",
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: "12px",
+          padding: "1.5rem",
+          width: "90%",
+          maxWidth: "400px",
+        }}
+      >
+        <h3 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
+          繰り返し予定の削除
+        </h3>
+        <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "1rem" }}>
+          「{instance.title}」({dateStr})の削除範囲を選択してください。
+        </p>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
+          <button onClick={() => onConfirm("single")} style={btnStyle}>
+            この予定のみ
+          </button>
+          <button onClick={() => onConfirm("future")} style={btnStyle}>
+            この予定以降
+          </button>
+          <button
+            onClick={() => onConfirm("all")}
+            style={{ ...btnStyle, color: "#c0392b", borderColor: "#e74c3c" }}
+          >
+            すべての予定
+          </button>
+          <button
+            onClick={onClose}
+            style={{ ...btnStyle, background: "#f5f5f5", textAlign: "center" }}
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EventFormPopup({
   event,
   onClose,
@@ -357,10 +518,40 @@ function EventFormPopup({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [recurrenceType, setRecurrenceType] = useState<
+    "none" | "daily" | "weekly" | "monthly" | "custom"
+  >(() => {
+    const rule = parseRecurrenceRule(event?.recurrence_rule ?? null);
+    if (rule) {
+      if (rule.interval === 1 && !rule.until) return rule.frequency;
+      return "custom";
+    }
+    return "none";
+  });
+  const [customFrequency, setCustomFrequency] = useState<
+    "daily" | "weekly" | "monthly"
+  >("daily");
+  const [customInterval, setCustomInterval] = useState(1);
+  const [customUntil, setCustomUntil] = useState("");
+
+  useEffect(() => {
+    const rule = parseRecurrenceRule(event?.recurrence_rule ?? null);
+    if (rule) {
+      setCustomFrequency(rule.frequency);
+      setCustomInterval(rule.interval);
+      if (rule.until) {
+        const d = new Date(rule.until);
+        d.setDate(d.getDate() - 1);
+        setCustomUntil(d.toISOString().slice(0, 10));
+      }
+    }
+  }, [event]);
+
+  const isRecurring = !!parseRecurrenceRule(event?.recurrence_rule ?? null);
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       setError("JPEG/PNG/GIF/WebPのみアップロード可能です");
@@ -370,7 +561,6 @@ function EventFormPopup({
       setError("ファイルサイズは5MB以下にしてください");
       return;
     }
-
     try {
       setUploading(true);
       setError(null);
@@ -395,17 +585,35 @@ function EventFormPopup({
     }
   }
 
+  function buildRecurrenceRule(): string | null {
+    if (recurrenceType === "daily")
+      return JSON.stringify({ frequency: "daily", interval: 1, until: null });
+    if (recurrenceType === "weekly")
+      return JSON.stringify({ frequency: "weekly", interval: 1, until: null });
+    if (recurrenceType === "monthly")
+      return JSON.stringify({ frequency: "monthly", interval: 1, until: null });
+    if (recurrenceType === "custom") {
+      const interval = Math.max(1, customInterval);
+      let until: string | null = null;
+      if (customUntil) {
+        const d = new Date(customUntil + "T00:00:00");
+        d.setDate(d.getDate() + 1);
+        until = d.toISOString();
+      }
+      return JSON.stringify({ frequency: customFrequency, interval, until });
+    }
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !startAt) {
       setError("予定名と開始日時は必須です");
       return;
     }
-
     try {
       setSubmitting(true);
       setError(null);
-
       const body = {
         ...(event ? { id: event.id } : {}),
         title: title.trim(),
@@ -413,20 +621,18 @@ function EventFormPopup({
         start_at: new Date(startAt).toISOString(),
         end_at: endAt ? new Date(endAt).toISOString() : null,
         image_url: imageUrl,
+        recurrence_rule: buildRecurrenceRule(),
       };
-
       const method = event ? "PUT" : "POST";
       const res = await fetch("/api/calendar/events", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "保存に失敗しました");
       }
-
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存に失敗しました");
@@ -434,6 +640,21 @@ function EventFormPopup({
       setSubmitting(false);
     }
   }
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: "0.85rem",
+    color: "#666",
+    display: "block",
+    marginBottom: "0.25rem",
+  };
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.5rem",
+    border: "1px solid var(--border)",
+    borderRadius: "6px",
+    fontSize: "0.9rem",
+    boxSizing: "border-box",
+  };
 
   return (
     <div
@@ -465,19 +686,27 @@ function EventFormPopup({
           {event ? "予定を編集" : "新しい予定"}
         </h3>
 
+        {isRecurring && (
+          <div
+            style={{
+              fontSize: "0.8rem",
+              color: "var(--accent)",
+              background: "rgba(0,0,0,0.03)",
+              borderRadius: "6px",
+              padding: "0.5rem 0.75rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            この予定は繰り返し予定です。変更はすべての予定に適用されます。
+          </div>
+        )}
+
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
         >
           <div>
-            <label
-              style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                display: "block",
-                marginBottom: "0.25rem",
-              }}
-            >
+            <label style={labelStyle}>
               予定名 <span style={{ color: "red" }}>*</span>
             </label>
             <input
@@ -486,53 +715,23 @@ function EventFormPopup({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="予定名を入力"
               required
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
-              style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                display: "block",
-                marginBottom: "0.25rem",
-              }}
-            >
-              場所
-            </label>
+            <label style={labelStyle}>場所</label>
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="場所を入力"
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
-              style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                display: "block",
-                marginBottom: "0.25rem",
-              }}
-            >
+            <label style={labelStyle}>
               開始日時 <span style={{ color: "red" }}>*</span>
             </label>
             <input
@@ -540,54 +739,108 @@ function EventFormPopup({
               value={startAt}
               onChange={(e) => setStartAt(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
-              style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                display: "block",
-                marginBottom: "0.25rem",
-              }}
-            >
-              終了日時
-            </label>
+            <label style={labelStyle}>終了日時</label>
             <input
               type="datetime-local"
               value={endAt}
               onChange={(e) => setEndAt(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                border: "1px solid var(--border)",
-                borderRadius: "6px",
-                fontSize: "0.9rem",
-                boxSizing: "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label
+            <label style={labelStyle}>繰り返し</label>
+            <select
+              value={recurrenceType}
+              onChange={(e) =>
+                setRecurrenceType(
+                  e.target.value as
+                    "none" | "daily" | "weekly" | "monthly" | "custom"
+                )
+              }
+              style={inputStyle}
+            >
+              <option value="none">繰り返さない</option>
+              <option value="daily">毎日</option>
+              <option value="weekly">毎週</option>
+              <option value="monthly">毎月</option>
+              <option value="custom">カスタム</option>
+            </select>
+          </div>
+
+          {recurrenceType === "custom" && (
+            <div
               style={{
-                fontSize: "0.85rem",
-                color: "#666",
-                display: "block",
-                marginBottom: "0.25rem",
+                paddingLeft: "0.5rem",
+                borderLeft: "2px solid var(--border)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
               }}
             >
-              画像（1枚まで）
-            </label>
+              <div>
+                <label style={labelStyle}>周期</label>
+                <select
+                  value={customFrequency}
+                  onChange={(e) =>
+                    setCustomFrequency(
+                      e.target.value as "daily" | "weekly" | "monthly"
+                    )
+                  }
+                  style={inputStyle}
+                >
+                  <option value="daily">毎日</option>
+                  <option value="weekly">毎週</option>
+                  <option value="monthly">毎月</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>間隔</label>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={customInterval}
+                    onChange={(e) =>
+                      setCustomInterval(Math.max(1, Number(e.target.value)))
+                    }
+                    style={{ ...inputStyle, width: "80px" }}
+                  />
+                  <span style={{ fontSize: "0.85rem", color: "#666" }}>
+                    {customFrequency === "daily"
+                      ? "日ごと"
+                      : customFrequency === "weekly"
+                        ? "週ごと"
+                        : "ヶ月ごと"}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>終了日（任意）</label>
+                <input
+                  type="date"
+                  value={customUntil}
+                  onChange={(e) => setCustomUntil(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label style={labelStyle}>画像（1枚まで）</label>
             {imageUrl ? (
               <div style={{ position: "relative", display: "inline-block" }}>
                 <img
