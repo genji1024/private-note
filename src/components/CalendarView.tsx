@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { CalendarEvent, UserProfile } from "@/lib/types";
 import ThreeDotMenu from "@/components/ThreeDotMenu";
 
@@ -17,6 +17,7 @@ export default function CalendarView({
   const [error, setError] = useState<string | null>(null);
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  const listRef = useRef<HTMLDivElement>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -73,13 +74,37 @@ export default function CalendarView({
       return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
     })
     .sort((a, b) => {
-      const aFinished = isEventFinished(a, now);
-      const bFinished = isEventFinished(b, now);
-      if (aFinished !== bFinished) return aFinished ? 1 : -1;
       const aTime = new Date(a.start_at).getTime();
       const bTime = new Date(b.start_at).getTime();
-      return aFinished ? bTime - aTime : aTime - bTime;
+      return aTime - bTime;
     });
+
+  useEffect(() => {
+    const listEl = listRef.current;
+    if (!listEl) return;
+    const nowTime = Date.now();
+    const monthAsc = events
+      .filter((event) => {
+        const d = new Date(event.start_at);
+        return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+      );
+    const firstUnfinished = monthAsc.find((event) => {
+      const end = event.end_at
+        ? new Date(event.end_at)
+        : new Date(event.start_at);
+      return end.getTime() >= nowTime;
+    });
+    const target = firstUnfinished
+      ? listEl.querySelector<HTMLElement>(
+          `[data-event-id="${firstUnfinished.id}"]`
+        )
+      : null;
+    (target ?? listEl).scrollIntoView({ block: "start" });
+  }, [events, viewYear, viewMonth]);
 
   return (
     <div>
@@ -119,6 +144,7 @@ export default function CalendarView({
         </p>
       ) : (
         <div
+          ref={listRef}
           style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
         >
           {monthEvents.map((event) => (
@@ -233,6 +259,7 @@ function EventCard({
 
   return (
     <div
+      data-event-id={event.id}
       style={{
         border: "1px solid var(--border)",
         borderRadius: "8px",
