@@ -1,6 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import LoginForm from "@/components/LoginForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const { data: users } = await supabaseAdmin
     .from("users")
