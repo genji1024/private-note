@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import ImageUpload from "@/components/ImageUpload";
 
@@ -62,7 +63,7 @@ export default function ProfileForm({
     };
     if (newPassword) body.new_password = newPassword;
 
-    const res = await fetch("/api/profile", {
+    const res = await apiFetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

@@ -18,12 +18,13 @@ Next.js フロントエンドを Docker で VPS にデプロイする手順。
 `next build` 時にクライアントバンドルへ埋め込まれる。docker-compose の
 `build.args` 経由で渡すため、値の変更にはイメージの再ビルドが必要。
 
-| 変数                                   | 説明                      |
-| -------------------------------------- | ------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase プロジェクト URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase 公開キー         |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`        | Supabase anon key         |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Web Push の公開鍵         |
+| 変数                                   | 説明                                                                               |
+| -------------------------------------- | ---------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase プロジェクト URL                                                          |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase 公開キー                                                                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`        | Supabase anon key                                                                  |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Web Push の公開鍵                                                                  |
+| `NEXT_PUBLIC_BASE_PATH`                | サブパスデプロイ用（例: Nginx `location /note/` なら `/note`）。ルート直下なら空欄 |
 
 ### 実行時（サーバー側シークレット）
 
@@ -67,6 +68,32 @@ docker compose up -d --build
 - nginx: `proxy_pass http://127.0.0.1:3000;` を設定
 
 このリポジトリではリバースプロキシ自体は管理しない。
+
+### サブパスデプロイ（例: `https://example.com/note/`）
+
+`/note/` 配下にデプロイする場合は以下の手順で設定する。
+
+1. `.env` に `NEXT_PUBLIC_BASE_PATH=/note` を設定（値の変更はイメージの再ビルドが必要）
+2. `NEXTAUTH_URL` もサブパス込みにする（例: `https://example.com/note/api/auth`）
+3. Nginx の `location /note/` ブロックで `proxy_pass http://127.0.0.1:3000;` を指定する（**末尾スラッシュなし**。末尾に `/` を付けるとパスが `/note/` 側で剥がれて basePath が合わなくなる）
+
+```nginx
+location /note/ {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+`location /note/`（プレフィックス一致）は `/note/login` や `/note/api/...` をすべて
+カバーする。スラッシュなしの `/note` へ直接アクセスされた場合に備えて、Nginx 側で
+`/note` → `/note/` のリダイレクトを入れると親切:
+
+```nginx
+location = /note { return 301 /note/; }
+```
+
+ルート直下（`https://example.com/`）にデプロイする場合は `NEXT_PUBLIC_BASE_PATH` を空欄のままにする。
 
 ## 注意
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import MultiImageUpload, {
   serializeImageUrls,
@@ -15,7 +16,7 @@ export default function NewEntryForm() {
     e.preventDefault();
     setSubmitting(true);
 
-    await fetch("/api/entries", {
+    await apiFetch("/api/entries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

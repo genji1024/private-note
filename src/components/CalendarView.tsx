@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type {
   CalendarEvent,
@@ -36,7 +37,7 @@ export default function CalendarView({
 
   const fetchEvents = useCallback(async () => {
     try {
-      const res = await fetch("/api/calendar/events");
+      const res = await apiFetch("/api/calendar/events");
       if (res.ok) {
         const data = await res.json();
         setEvents(data.events);
@@ -54,7 +55,7 @@ export default function CalendarView({
     }
     if (!confirm("この予定を削除しますか？")) return;
     try {
-      const res = await fetch("/api/calendar/events", {
+      const res = await apiFetch("/api/calendar/events", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: instance.id }),
@@ -69,7 +70,7 @@ export default function CalendarView({
   async function handleDeleteRecurring(mode: "single" | "future" | "all") {
     if (!deletingInstance) return;
     try {
-      const res = await fetch("/api/calendar/events", {
+      const res = await apiFetch("/api/calendar/events", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -566,7 +567,7 @@ function EventFormPopup({
       setError(null);
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/upload", {
+      const res = await apiFetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -624,7 +625,7 @@ function EventFormPopup({
         recurrence_rule: buildRecurrenceRule(),
       };
       const method = event ? "PUT" : "POST";
-      const res = await fetch("/api/calendar/events", {
+      const res = await apiFetch("/api/calendar/events", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { supabaseAdmin } from "@/lib/supabase";
+import { API_BASE } from "@/lib/api";
+import AuthProvider from "@/components/AuthProvider";
 import PushNotificationSetup from "@/components/PushNotificationSetup";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description: "パートナーとの交換日記",
-    manifest: "/manifest.webmanifest",
+    manifest: `${API_BASE}/manifest.webmanifest`,
   };
 }
 
@@ -25,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         <PushNotificationSetup />
       </body>
     </html>

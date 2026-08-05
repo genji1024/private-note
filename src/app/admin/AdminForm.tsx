@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ReactionType } from "@/lib/types";
@@ -41,7 +42,7 @@ export default function AdminForm({
     setSaving(true);
     setMessage("");
 
-    const res = await fetch("/api/settings", {
+    const res = await apiFetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(settings),
@@ -59,7 +60,7 @@ export default function AdminForm({
 
   const handleAddReactionType = async () => {
     if (!newReactionValue.trim()) return;
-    const res = await fetch("/api/reactions/types", {
+    const res = await apiFetch("/api/reactions/types", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -79,7 +80,7 @@ export default function AdminForm({
 
   const handleDeleteReactionType = async (id: number) => {
     if (!confirm("削除しますか？")) return;
-    const res = await fetch("/api/reactions/types", {
+    const res = await apiFetch("/api/reactions/types", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -342,7 +343,7 @@ export default function AdminForm({
                 setUploadingImage(true);
                 const formData = new FormData();
                 formData.append("file", file);
-                const res = await fetch("/api/upload", {
+                const res = await apiFetch("/api/upload", {
                   method: "POST",
                   body: formData,
                 });

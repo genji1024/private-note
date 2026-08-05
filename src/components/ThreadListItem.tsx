@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import type { Thread } from "@/lib/types";
 import ThreeDotMenu from "@/components/ThreeDotMenu";
 
@@ -14,7 +15,7 @@ export default function ThreadListItem({
 
   const handleDelete = async () => {
     if (!confirm("このスレッドを削除しますか？")) return;
-    await fetch("/api/threads", {
+    await apiFetch("/api/threads", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: thread.id }),

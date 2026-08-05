@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 
 export default function ImageUpload({
@@ -23,7 +24,7 @@ export default function ImageUpload({
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", {
+      const res = await apiFetch("/api/upload", {
         method: "POST",
         body: formData,
       });

@@ -3,7 +3,7 @@ const CACHE_NAME = "chihiro-note-v1";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(["/"]);
+      return cache.addAll(["./"]);
     })
   );
   self.skipWaiting();
@@ -64,9 +64,9 @@ self.addEventListener("push", (event) => {
   const data = event.data.json();
   const options = {
     body: data.body || "",
-    icon: "/icons/icon-192x192.png",
-    badge: "/icons/icon-192x192.png",
-    data: { url: data.url || "/" },
+    icon: "./icons/icon-192x192.png",
+    badge: "./icons/icon-192x192.png",
+    data: { url: data.url || "./" },
     vibrate: [200, 100, 200],
   };
 
@@ -77,7 +77,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  const url = event.notification.data?.url || "./";
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((windowClients) => {
       const existing = windowClients.find((c) => c.url === url);

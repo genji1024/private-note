@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -22,7 +23,7 @@ export default async function ProfilePage() {
   return (
     <div className="container">
       <div style={{ marginBottom: "1.5rem" }}>
-        <a
+        <Link
           href="/"
           style={{
             display: "inline-flex",
@@ -46,7 +47,7 @@ export default async function ProfilePage() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
           戻る
-        </a>
+        </Link>
       </div>
       <h2 style={{ fontSize: "1.5rem", marginBottom: "1.5rem" }}>
         プロフィール設定
