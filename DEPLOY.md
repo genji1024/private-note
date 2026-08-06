@@ -75,7 +75,7 @@ docker compose up -d --build
 
 1. `.env` に `NEXT_PUBLIC_BASE_PATH=/note` を設定（値の変更はイメージの再ビルドが必要）
 2. `NEXTAUTH_URL` もサブパス込みにする（例: `https://example.com/note/api/auth`）
-3. Nginx の `location /note/` ブロックで `proxy_pass http://127.0.0.1:3000;` を指定する（**末尾スラッシュなし**。末尾に `/` を付けるとパスが `/note/` 側で剥がれて basePath が合わなくなる）
+3. Nginx の `location /note/` ブロックで `proxy_pass http://127.0.0.1:3000;` を指定する（**末尾スラッシュなし**）
 
 ```nginx
 location /note/ {
@@ -86,14 +86,51 @@ location /note/ {
 ```
 
 `location /note/`（プレフィックス一致）は `/note/login` や `/note/api/...` をすべて
-カバーする。スラッシュなしの `/note` へ直接アクセスされた場合に備えて、Nginx 側で
-`/note` → `/note/` のリダイレクトを入れると親切:
+カバーする。スラッシュなしの `/note` へのアクセスは、Next.js がアプリ内で
+`/note` → 307 → `/note/login` にリダイレクトするため、Nginx 側でのリダイレクトは不要。
 
-```nginx
-location = /note { return 301 /note/; }
-```
+> ※ リダイレクト用の `location = /note { return 301 /note/; }` のようなルールを入れると、
+> Next.js が `/note/` → 308 → `/note` を返すため、301 / 302 系の `return /note/`
+> リダイレクトはどちらも 308 との無限ループ（`ERR_TOO_MANY_REDIRECTS`）になります。
+> このルールは入れないでください。
+
+> ※ `proxy_pass` の末尾にスラッシュを付けると（`http://127.0.0.1:3000/`）、Nginx が
+> `/note/` プレフィックスを剥がして Next.js に渡してしまい、basePath が一致しないため
+> 404 になります。末尾スラッシュなしを維持してください。
 
 ルート直下（`https://example.com/`）にデプロイする場合は `NEXT_PUBLIC_BASE_PATH` を空欄のままにする。
+
+## トラブルシューティング
+
+### `/note` にアクセスすると 404 This page could not be found. が出る
+
+最有力原因は、デプロイ環境の Docker イメージが `NEXT_PUBLIC_BASE_PATH=/note` を指定せずにビルドされていることです（basePath 空 のアプリは `/note/*` を提供せず 404 を返します）。以下の手順で切り分けてください。
+
+1. `.env` に `NEXT_PUBLIC_BASE_PATH=/note` が記載されているか確認（[BUILD-TIME] ラベルの環境変数は docker compose build 時にのみ読み込まれます）
+2. 設定を変更した場合は イメージの再ビルド が必要です:
+   ```bash
+   docker compose build        # .env の NEXT_PUBLIC_BASE_PATH が build.args 経由で Dockerfile に渡される
+   docker compose up -d --force-recreate
+   ```
+3. 稼働中コンテナで basePath が焼き込まれているか確認:
+   ```bash
+   docker compose exec app grep -o '"basePath":"[^"]*"' /app/server.js
+   # 期待: "basePath":"/note"
+   # basePath 空の場合: "basePath":""
+   ```
+4. Nginx の `proxy_pass` の末尾スラッシュを確認:
+   - `proxy_pass http://127.0.0.1:3000;`（末尾スラッシュなし = OK）
+   - `proxy_pass http://127.0.0.1:3000/;`（末尾スラッシュあり = NG。`/note/` プレフィックスが剥がれて 404 になる）
+5. 期待される HTTP レスポンス:
+   ```bash
+   curl -sI https://example.com/note
+   # 307 Location: /note/login が返れば正常（basePath が焼き込まれていれば）
+   # 404 が返る場合は basePath が焼き込まれていないので手順1-3 をやり直す
+   ```
+
+### `/note` にアクセスすると ERR_TOO_MANY_REDIRECTS になる
+
+Nginx の `location = /note { return 301 /note/; }` のようなルールが残っていると、Next.js の `/note/` → 308 → `/note` とループします。301 / 302 系の `return /note/` リダイレクトはどちらも不可です。このルールは削除してください。Next.js は `/note` → 307 → `/note/login` をアプリ内で完結するため不要です。
 
 ## 注意
 
