@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import ImageViewer from "@/components/ImageViewer";
 
@@ -34,7 +35,7 @@ export default function MultiImageUpload({
       const formData = new FormData();
       formData.append("file", file);
       try {
-        const res = await fetch("/api/upload", {
+        const res = await apiFetch("/api/upload", {
           method: "POST",
           body: formData,
         });

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { apiFetch } from "@/lib/api";
 import type { Thread } from "@/lib/types";
 
 export default function ThreadItem({
@@ -13,7 +15,7 @@ export default function ThreadItem({
 
   const handleDelete = async () => {
     if (!confirm("このスレッドを削除しますか？")) return;
-    await fetch("/api/threads", {
+    await apiFetch("/api/threads", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: thread.id }),
@@ -23,12 +25,12 @@ export default function ThreadItem({
 
   return (
     <div className="card">
-      <a
+      <Link
         href={`/threads/${thread.id}`}
         style={{ textDecoration: "none", color: "inherit" }}
       >
         <h3 style={{ marginBottom: "0.5rem" }}>{thread.title}</h3>
-      </a>
+      </Link>
       <p style={{ color: "#666", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
         {thread.author_name} ·{" "}
         {new Date(thread.created_at).toLocaleString("ja-JP")} · コメント{" "}

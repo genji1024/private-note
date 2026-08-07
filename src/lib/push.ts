@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "./supabase";
+import { apiUrl } from "./api";
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
@@ -29,7 +30,7 @@ export async function sendPushNotification({
 
   if (!subscriptions || subscriptions.length === 0) return;
 
-  const payload = JSON.stringify({ title, body, url: url || "/" });
+  const payload = JSON.stringify({ title, body, url: apiUrl(url || "/") });
 
   await Promise.allSettled(
     subscriptions.map(async (sub) => {

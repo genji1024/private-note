@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState, useEffect, useCallback } from "react";
 import type {
   ThreadComment,
@@ -42,7 +43,7 @@ export default function ThreadView({
     if (!body.trim()) return;
     setSubmitting(true);
 
-    await fetch(`/api/threads/${threadId}/comments`, {
+    await apiFetch(`/api/threads/${threadId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -60,7 +61,7 @@ export default function ThreadView({
   };
 
   const handleSaveDescription = async () => {
-    await fetch("/api/threads", {
+    await apiFetch("/api/threads", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: threadId, description }),
@@ -223,7 +224,7 @@ function ThreadCommentCard({
   const displayImages = parseImageUrls(comment.image_url);
 
   const fetchReactions = useCallback(async () => {
-    const res = await fetch(`/api/comments/${comment.id}/reactions`);
+    const res = await apiFetch(`/api/comments/${comment.id}/reactions`);
     const data = await res.json();
     setReactions(data.reactions || []);
     setReactionTypes(data.types || []);
@@ -234,7 +235,7 @@ function ThreadCommentCard({
   }, [fetchReactions]);
 
   const handleUpdate = async () => {
-    await fetch(`/api/threads/${threadId}/comments`, {
+    await apiFetch(`/api/threads/${threadId}/comments`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -249,7 +250,7 @@ function ThreadCommentCard({
 
   const handleDelete = async () => {
     if (!confirm("削除しますか？")) return;
-    await fetch(`/api/threads/${threadId}/comments`, {
+    await apiFetch(`/api/threads/${threadId}/comments`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: comment.id }),
@@ -258,7 +259,7 @@ function ThreadCommentCard({
   };
 
   const handleReact = async (typeId: number) => {
-    await fetch(`/api/comments/${comment.id}/reactions`, {
+    await apiFetch(`/api/comments/${comment.id}/reactions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reaction_type_id: typeId }),
@@ -268,7 +269,7 @@ function ThreadCommentCard({
   };
 
   const handleRemoveReaction = async () => {
-    await fetch(`/api/comments/${comment.id}/reactions`, {
+    await apiFetch(`/api/comments/${comment.id}/reactions`, {
       method: "DELETE",
     });
     fetchReactions();

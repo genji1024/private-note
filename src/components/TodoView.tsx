@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import type { TodoList, TodoItem } from "@/lib/types";
 import ThreeDotMenu from "@/components/ThreeDotMenu";
@@ -27,7 +28,7 @@ export default function TodoView({
     e.preventDefault();
     if (!newListTitle.trim()) return;
 
-    const res = await fetch("/api/todos/lists", {
+    const res = await apiFetch("/api/todos/lists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newListTitle }),
@@ -43,7 +44,7 @@ export default function TodoView({
   const handleUpdateList = async (listId: string) => {
     if (!editingListTitle.trim()) return;
 
-    const res = await fetch(`/api/todos/lists/${listId}`, {
+    const res = await apiFetch(`/api/todos/lists/${listId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: editingListTitle }),
@@ -62,7 +63,7 @@ export default function TodoView({
   const handleDeleteList = async (listId: string) => {
     if (!confirm("リストを削除しますか？")) return;
 
-    const res = await fetch(`/api/todos/lists/${listId}`, {
+    const res = await apiFetch(`/api/todos/lists/${listId}`, {
       method: "DELETE",
     });
 
@@ -76,7 +77,7 @@ export default function TodoView({
     e.preventDefault();
     if (!newItemTitle.trim() || !activeListId) return;
 
-    const res = await fetch(`/api/todos/lists/${activeListId}/items`, {
+    const res = await apiFetch(`/api/todos/lists/${activeListId}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newItemTitle }),
@@ -94,7 +95,7 @@ export default function TodoView({
   };
 
   const handleToggleItem = async (item: TodoItem) => {
-    const res = await fetch(`/api/todos/items/${item.id}`, {
+    const res = await apiFetch(`/api/todos/items/${item.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !item.done }),
@@ -118,7 +119,7 @@ export default function TodoView({
   const handleUpdateItem = async (itemId: string) => {
     if (!editingItemTitle.trim()) return;
 
-    const res = await fetch(`/api/todos/items/${itemId}`, {
+    const res = await apiFetch(`/api/todos/items/${itemId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: editingItemTitle }),
@@ -143,7 +144,7 @@ export default function TodoView({
   const handleDeleteItem = async (itemId: string) => {
     if (!confirm("この項目を削除しますか？")) return;
 
-    const res = await fetch(`/api/todos/items/${itemId}`, {
+    const res = await apiFetch(`/api/todos/items/${itemId}`, {
       method: "DELETE",
     });
 

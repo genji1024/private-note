@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch, apiUrl } from "@/lib/api";
 import { useEffect } from "react";
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
@@ -22,7 +23,9 @@ export default function PushNotificationSetup() {
 
     const register = async () => {
       try {
-        const registration = await navigator.serviceWorker.register("/sw.js");
+        const registration = await navigator.serviceWorker.register(
+          apiUrl("/sw.js")
+        );
         const sub = await registration.pushManager.getSubscription();
         if (sub) return;
 
@@ -33,7 +36,7 @@ export default function PushNotificationSetup() {
           ) as unknown as BufferSource,
         });
 
-        await fetch("/api/push/subscribe", {
+        await apiFetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(subscription.toJSON()),

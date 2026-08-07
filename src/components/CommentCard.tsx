@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState, useEffect, useCallback } from "react";
 import type {
   ThreadComment,
@@ -42,7 +43,7 @@ export default function CommentCard({
   const displayImages = parseImageUrls(comment.image_url);
 
   const fetchReactions = useCallback(async () => {
-    const res = await fetch(`/api/comments/${comment.id}/reactions`);
+    const res = await apiFetch(`/api/comments/${comment.id}/reactions`);
     const data = await res.json();
     setReactions(data.reactions || []);
     setReactionTypes(data.types || []);
@@ -53,7 +54,7 @@ export default function CommentCard({
   }, [fetchReactions]);
 
   const handleUpdate = async () => {
-    await fetch(`/api/threads/${comment.thread_id}/comments`, {
+    await apiFetch(`/api/threads/${comment.thread_id}/comments`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -68,7 +69,7 @@ export default function CommentCard({
 
   const handleDelete = async () => {
     if (!confirm("削除しますか？")) return;
-    await fetch(`/api/threads/${comment.thread_id}/comments`, {
+    await apiFetch(`/api/threads/${comment.thread_id}/comments`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: comment.id }),
@@ -77,7 +78,7 @@ export default function CommentCard({
   };
 
   const handleReact = async (typeId: number) => {
-    await fetch(`/api/comments/${comment.id}/reactions`, {
+    await apiFetch(`/api/comments/${comment.id}/reactions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reaction_type_id: typeId }),
@@ -87,7 +88,7 @@ export default function CommentCard({
   };
 
   const handleRemoveReaction = async () => {
-    await fetch(`/api/comments/${comment.id}/reactions`, {
+    await apiFetch(`/api/comments/${comment.id}/reactions`, {
       method: "DELETE",
     });
     fetchReactions();

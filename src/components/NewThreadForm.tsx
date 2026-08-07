@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 
 export default function NewThreadForm() {
@@ -12,7 +13,7 @@ export default function NewThreadForm() {
     if (!title.trim()) return;
     setSubmitting(true);
 
-    await fetch("/api/threads", {
+    await apiFetch("/api/threads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, description }),

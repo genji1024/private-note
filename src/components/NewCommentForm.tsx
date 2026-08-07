@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import MultiImageUpload, {
   serializeImageUrls,
@@ -15,7 +16,7 @@ export default function NewCommentForm({ threadId }: { threadId: string }) {
     if (!body.trim()) return;
     setSubmitting(true);
 
-    await fetch(`/api/threads/${threadId}/comments`, {
+    await apiFetch(`/api/threads/${threadId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useState } from "react";
 import type { Entry } from "@/lib/types";
 import MultiImageUpload, {
@@ -28,7 +29,7 @@ export default function EntryCard({
   const displayImages = parseImageUrls(entry.image_url);
 
   const handleUpdate = async () => {
-    await fetch("/api/entries", {
+    await apiFetch("/api/entries", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -44,7 +45,7 @@ export default function EntryCard({
 
   const handleDelete = async () => {
     if (!confirm("削除しますか？")) return;
-    await fetch("/api/entries", {
+    await apiFetch("/api/entries", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: entry.id }),
@@ -53,7 +54,7 @@ export default function EntryCard({
   };
 
   const handleRead = async () => {
-    await fetch("/api/read", {
+    await apiFetch("/api/read", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entry_id: entry.id }),

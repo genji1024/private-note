@@ -41,7 +41,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/login",
+    signIn: `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/login`,
   },
   callbacks: {
     async jwt({ token, user }) {
