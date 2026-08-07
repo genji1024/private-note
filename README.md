@@ -34,7 +34,7 @@ Docker で VPS にデプロイ可能。バックエンド（DB・Storage）は�
 | `NEXTAUTH_SECRET`                      | [RUNTIME]    | `openssl rand -base64 32` で生成                                                                      |
 | `NEXTAUTH_URL`                         | [RUNTIME]    | デプロイ先の本番 URL（例: `https://note.example.com`）                                                |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | [BUILD-TIME] | VAPID 鍵ペア生成コマンドで出力された公開鍵                                                            |
-| `NEXT_PUBLIC_BASE_PATH`                | [BUILD-TIME] | サブパスデプロイ用（例: Nginx `location /note/` なら `/note`）。ルート直下の場合は空欄                |
+| `NEXT_PUBLIC_BASE_PATH`                | [BUILD-TIME] | サブパスデプロイ用（例: Nginx `location /note` なら `/note`）。ルート直下の場合は空欄                 |
 | `VAPID_PRIVATE_KEY`                    | [RUNTIME]    | VAPID 鍵ペア生成コマンドで出力された秘密鍵                                                            |
 | `VAPID_SUBJECT`                        | [RUNTIME]    | 通知の送信者情報（例: `mailto:admin@example.com`）                                                    |
 
