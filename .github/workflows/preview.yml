@@ -1,0 +1,56 @@
+name: Preview Build
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXTAUTH_SECRET: ci-secret
+          NEXTAUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: dummy-service-key
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: .next/
+          retention-days: 7
+
+      - name: Comment preview instructions
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const runUrl = process.env.GITHUB_SERVER_URL + "/" + process.env.GITHUB_REPOSITORY + "/actions/runs/" + process.env.GITHUB_RUN_ID;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "## Preview Build Complete\n\n- CI checks passed (lint, format, typecheck, build)\n- Build artifact: download from [Workflow Run](" + runUrl + ") > Artifacts > `build-output`\n\n### \\u30ed\\u30fc\\u30ab\\u30eb\\u3067\\u52d5\\u4f5c\\u78ba\\u8a8d\\u3059\\u308b\\u5834\\u5408\n```\nnpm ci\nnpm run build\nnpm start\n```\n\n`.env.local` \\u306e\\u74b0\\u5883\\u5909\\u6570\\u304c\\u5fc5\\u8981\\u3067\\u3059\\u3002"
+            });

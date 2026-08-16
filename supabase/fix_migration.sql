@@ -1,0 +1,3 @@
+-- このファイルは setup_all.sql に統合されました。
+-- Supabase Dashboard > SQL Editor で supabase/setup_all.sql の内容を
+-- 実行してください。詳細は PR #43 のコメントを確認してください。

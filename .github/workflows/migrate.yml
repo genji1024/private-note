@@ -1,0 +1,43 @@
+name: Database Migration
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  migrate:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/deploy migrate')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+
+      - name: Apply pending migrations
+        run: supabase db push
+
+      - name: Report result
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const runUrl = process.env.GITHUB_SERVER_URL + "/" + process.env.GITHUB_REPOSITORY + "/actions/runs/" + process.env.GITHUB_RUN_ID;
+            const branch = context.payload.comment.user.login;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: "## Migration Result\n\nMigrations have been applied successfully.\n\n- See: [Workflow Run](" + runUrl + ")\n- Branch: `" + branch + "`'s PR branch\n\nPlease verify the database state and continue with testing."
+            });
