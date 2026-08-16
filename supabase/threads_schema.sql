@@ -1,0 +1,66 @@
+-- Threads schema for chihiro-note
+-- Run after schema.sql
+
+create table if not exists calendar_events (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references users(id) on delete cascade,
+  title text not null,
+  location text not null default '',
+  start_at timestamptz not null,
+  end_at timestamptz,
+  image_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_calendar_events_start_at on calendar_events (start_at asc);
+create index if not exists idx_calendar_events_author_id on calendar_events (author_id);
+
+alter table calendar_events enable row level security;
+
+drop policy if exists "Anyone can read calendar_events" on calendar_events;
+create policy "Anyone can read calendar_events" on calendar_events
+  for select using (true);
+drop policy if exists "Authenticated can write calendar_events" on calendar_events;
+create policy "Authenticated can write calendar_events" on calendar_events
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+create table if not exists threads (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  created_by uuid not null references users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_threads_created_at on threads (created_at desc);
+
+create table if not exists thread_comments (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references threads(id) on delete cascade,
+  author_id uuid not null references users(id) on delete cascade,
+  body text not null default '',
+  image_url text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_thread_comments_thread_id on thread_comments (thread_id, created_at desc);
+
+-- RLS
+alter table threads enable row level security;
+alter table thread_comments enable row level security;
+
+drop policy if exists "Anyone can read threads" on threads;
+create policy "Anyone can read threads" on threads
+  for select using (true);
+drop policy if exists "Authenticated can write threads" on threads;
+create policy "Authenticated can write threads" on threads
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+drop policy if exists "Anyone can read thread_comments" on thread_comments;
+create policy "Anyone can read thread_comments" on thread_comments
+  for select using (true);
+drop policy if exists "Authenticated can write thread_comments" on thread_comments;
+create policy "Authenticated can write thread_comments" on thread_comments
+  for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
