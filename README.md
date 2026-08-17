@@ -37,6 +37,7 @@ Docker で VPS にデプロイ可能。バックエンド（DB・Storage）は�
 | `NEXT_PUBLIC_BASE_PATH`                | [BUILD-TIME] | サブパスデプロイ用（例: Nginx `location /note` なら `/note`）。ルート直下の場合は空欄                 |
 | `VAPID_PRIVATE_KEY`                    | [RUNTIME]    | VAPID 鍵ペア生成コマンドで出力された秘密鍵                                                            |
 | `VAPID_SUBJECT`                        | [RUNTIME]    | 通知の送信者情報（例: `mailto:admin@example.com`）                                                    |
+| `PORT`                                 | [RUNTIME]    | HTTP 待ち受けポート番号（`.env` での設定必須。`.env.example` の値は 3002）                            |
 
 ### VAPID 鍵の生成
 

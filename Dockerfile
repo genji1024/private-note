@@ -36,9 +36,12 @@ RUN npm run build
 # ---- Stage 3: runner ----
 FROM node:22-alpine AS runner
 WORKDIR /app
+# PORT は .env（docker-compose の build.args）が単一の情報源で、デフォルト値は持たない。
+# 単独で `docker build` する場合は `--build-arg PORT=<port>` を必ず指定すること。
+ARG PORT
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000 \
+    PORT=$PORT \
     HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs \
@@ -52,10 +55,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE $PORT
 
 # busybox wget (included in alpine) is used for the health check.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:$PORT/ || exit 1
 
 CMD ["node", "server.js"]

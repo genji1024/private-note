@@ -49,7 +49,7 @@ docker compose up -d --build
 起動確認:
 
 ```bash
-curl http://localhost:3000
+curl http://localhost:3002
 docker compose logs -f app
 ```
 
@@ -65,7 +65,9 @@ docker compose up -d --build
 本番では TLS 終端用にリバースプロキシ（Caddy や nginx）をフロントに置くこと。
 
 - Caddy: 自動で Let's Encrypt 証明書を取得（推奨）
-- nginx: `proxy_pass http://127.0.0.1:3000;` を設定
+- nginx: `proxy_pass http://127.0.0.1:${PORT};` を設定（`${PORT}` は `.env` の値）
+
+ポート番号は `.env` の `PORT` が単一の情報源（デフォルト値はない）。`proxy_pass` のポートもこの値に合わせること。
 
 画像アップロードは1ファイル最大5MBのため、nginx では `client_max_body_size` を
 十分な値（例: 10m）に設定してください。未設定だとデフォルトの 1m が適用され、
@@ -80,12 +82,13 @@ docker compose up -d --build
 
 1. `.env` に `NEXT_PUBLIC_BASE_PATH=/note` を設定（値の変更はイメージの再ビルドが必要）
 2. `NEXTAUTH_URL` もサブパス込みにする（例: `https://example.com/note/api/auth`）
-3. Nginx の `location /note` ブロックで `proxy_pass http://127.0.0.1:3000;` を指定する（**末尾スラッシュなし**）
+3. Nginx の `location /note` ブロックで `proxy_pass http://127.0.0.1:${PORT};` を指定する（**末尾スラッシュなし**。`${PORT}` は `.env` の値）
 
 ```nginx
 location /note {
     client_max_body_size 10m;
-    proxy_pass http://127.0.0.1:3000;
+    # ポートは .env の PORT に合わせる（この例では 3002）
+    proxy_pass http://127.0.0.1:3002;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
 }
@@ -100,7 +103,7 @@ location /note {
 > リダイレクトはどちらも 308 との無限ループ（`ERR_TOO_MANY_REDIRECTS`）になります。
 > このルールは入れないでください。
 
-> ※ `proxy_pass` の末尾にスラッシュを付けると（`http://127.0.0.1:3000/`）、Nginx が
+> ※ `proxy_pass` の末尾にスラッシュを付けると（`http://127.0.0.1:3002/`）、Nginx が
 > `/note/` プレフィックスを剥がして Next.js に渡してしまい、basePath が一致しないため
 > 404 になります。末尾スラッシュなしを維持してください。
 
@@ -124,9 +127,9 @@ location /note {
    # 期待: "basePath":"/note"
    # basePath 空の場合: "basePath":""
    ```
-4. Nginx の `proxy_pass` の末尾スラッシュを確認:
-   - `proxy_pass http://127.0.0.1:3000;`（末尾スラッシュなし = OK）
-   - `proxy_pass http://127.0.0.1:3000/;`（末尾スラッシュあり = NG。`/note/` プレフィックスが剥がれて 404 になる）
+4. Nginx の `proxy_pass` の末尾スラッシュを確認（ポート番号は `.env` の `PORT` に合わせる。ここでは 3002）:
+   - `proxy_pass http://127.0.0.1:3002;`（末尾スラッシュなし = OK）
+   - `proxy_pass http://127.0.0.1:3002/;`（末尾スラッシュあり = NG。`/note/` プレフィックスが剥がれて 404 になる）
 5. 期待される HTTP レスポンス:
    ```bash
    curl -sI https://example.com/note
