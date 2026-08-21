@@ -1,7 +1,16 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { asc, eq, sql } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import {
+  calendarEventExceptions,
+  calendarEvents,
+  settings as settingsTable,
+  todoItems,
+  todoLists,
+  users,
+} from "@/db/schema";
 import type {
   Thread,
   ThreadComment,
@@ -14,6 +23,13 @@ import type {
 import UserMenu from "@/components/UserMenu";
 import HomePageClient from "@/components/HomePageClient";
 
+/** Convert a Postgres timestamptz value (Date or ISO string) to the ISO string
+ *  client components receive today, so the client-facing shape is unchanged. */
+function toIso(value: string | Date | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  return new Date(value).toISOString();
+}
+
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -25,87 +41,177 @@ export default async function HomePage() {
     string | null;
   const username = (session.user as any).username as string;
 
-  const { data: settings } = await supabaseAdmin
-    .from("settings")
-    .select("*")
-    .eq("id", 1)
-    .single();
-  const siteTitle = settings?.site_title || "ちひろノート";
+  const settingsRows = await getDb()
+    .select()
+    .from(settingsTable)
+    .where(eq(settingsTable.id, 1))
+    .limit(1);
+  const row = settingsRows[0];
+  const siteTitle = row?.site_title || "ちひろノート";
 
-  const { data: userRows } = await supabaseAdmin
-    .from("users")
-    .select("id, display_name, profile_image_url, created_at, last_login_at");
+  const userRows = await getDb()
+    .select({
+      id: users.id,
+      display_name: users.display_name,
+      profile_image_url: users.profile_image_url,
+      created_at: users.created_at,
+      last_login_at: users.last_login_at,
+    })
+    .from(users);
   const userProfiles: Record<string, UserProfile> = {};
   for (const u of userRows || []) {
     userProfiles[u.id] = {
       display_name: u.display_name,
       profile_image_url: u.profile_image_url,
-      created_at: u.created_at,
-      last_login_at: u.last_login_at,
+      created_at: new Date(u.created_at).toISOString(),
+      last_login_at: u.last_login_at
+        ? new Date(u.last_login_at).toISOString()
+        : null,
     };
   }
 
   // Fetch all threads (diary thread has is_default=true)
-  const { data: threads } = await supabaseAdmin.rpc("get_threads");
+  const threadsResult = await getDb().execute(sql`select * from get_threads()`);
+  // get_threads returns comment_count as bigint; node-postgres exposes the raw
+  // value as a string, while Supabase/PostgREST exposed it as a JSON number.
+  // Normalize it back to a number to keep the exact response shape.
+  const threads: Thread[] = ((threadsResult.rows as Thread[]) || []).map(
+    (t) => ({
+      ...t,
+      comment_count: Number(t.comment_count),
+      created_at: toIso(t.created_at) as string,
+      updated_at: toIso(t.updated_at) as string,
+    })
+  );
 
-  const diaryThread = threads?.find((t: Thread) => t.is_default) || null;
-  const otherThreads = threads?.filter((t: Thread) => !t.is_default) || [];
+  const diaryThread = threads.find((t: Thread) => t.is_default) || null;
+  const otherThreads = threads.filter((t: Thread) => !t.is_default) || [];
 
   // Fetch diary entries (comments in the diary thread)
   let diaryEntries: ThreadComment[] = [];
   if (diaryThread) {
-    const { data } = await supabaseAdmin.rpc(
-      "get_diary_entries_with_read_status",
-      { p_current_user_id: userId }
+    const result = await getDb().execute(
+      sql`select * from get_diary_entries_with_read_status(${userId})`
     );
-    diaryEntries = (data as ThreadComment[]) || [];
+    diaryEntries = ((result.rows as ThreadComment[]) || []).map((c) => ({
+      ...c,
+      created_at: toIso(c.created_at) as string,
+      updated_at: toIso(c.updated_at) as string,
+    }));
   }
 
   // Fetch comments for each non-default thread
   const threadsWithComments: { thread: Thread; comments: ThreadComment[] }[] =
     [];
   for (const t of otherThreads) {
-    const { data: comments } = await supabaseAdmin.rpc("get_thread_comments", {
-      p_thread_id: t.id,
-    });
+    const result = await getDb().execute(
+      sql`select * from get_thread_comments(${t.id})`
+    );
+    const comments = ((result.rows as ThreadComment[]) || []).map((c) => ({
+      ...c,
+      created_at: toIso(c.created_at) as string,
+      updated_at: toIso(c.updated_at) as string,
+    }));
     threadsWithComments.push({
       thread: t,
-      comments: (comments as ThreadComment[]) || [],
+      comments,
     });
   }
 
   // Fetch todo lists with items
-  const { data: todoListsRaw } = await supabaseAdmin
-    .from("todo_lists")
-    .select("id, title, created_by, created_at, updated_at")
-    .order("created_at", { ascending: true });
+  const todoListsRaw = await getDb()
+    .select({
+      id: todoLists.id,
+      title: todoLists.title,
+      created_by: todoLists.created_by,
+      created_at: todoLists.created_at,
+      updated_at: todoLists.updated_at,
+    })
+    .from(todoLists)
+    .orderBy(asc(todoLists.created_at));
 
-  const todoLists: (TodoList & { items: TodoItem[] })[] = [];
+  const todoListsWithItems: (TodoList & { items: TodoItem[] })[] = [];
   for (const list of todoListsRaw || []) {
-    const { data: items } = await supabaseAdmin
-      .from("todo_items")
-      .select("*")
-      .eq("todo_list_id", list.id)
-      .order("created_at", { ascending: true });
-    todoLists.push({
-      ...list,
-      items: (items as TodoItem[]) || [],
+    const items = await getDb()
+      .select({
+        id: todoItems.id,
+        todo_list_id: todoItems.todo_list_id,
+        title: todoItems.title,
+        done: todoItems.done,
+        done_by: todoItems.done_by,
+        done_at: todoItems.done_at,
+        created_by: todoItems.created_by,
+        created_at: todoItems.created_at,
+        updated_at: todoItems.updated_at,
+      })
+      .from(todoItems)
+      .where(eq(todoItems.todo_list_id, list.id))
+      .orderBy(asc(todoItems.created_at));
+
+    todoListsWithItems.push({
+      id: list.id,
+      title: list.title,
+      created_by: list.created_by,
+      created_at: toIso(list.created_at) as string,
+      updated_at: toIso(list.updated_at) as string,
+      items: (items || []).map((item) => ({
+        id: item.id,
+        todo_list_id: item.todo_list_id,
+        title: item.title,
+        done: item.done,
+        done_by: item.done_by,
+        done_at: toIso(item.done_at),
+        created_by: item.created_by,
+        created_at: toIso(item.created_at) as string,
+        updated_at: toIso(item.updated_at) as string,
+      })),
     });
   }
 
   // Fetch calendar events
-  const { data: calendarEventsData } = await supabaseAdmin
-    .from("calendar_events")
-    .select("*")
-    .order("start_at", { ascending: true });
-  const calendarEvents = (calendarEventsData as CalendarEvent[]) || [];
+  const calendarEventsData = await getDb()
+    .select({
+      id: calendarEvents.id,
+      author_id: calendarEvents.author_id,
+      title: calendarEvents.title,
+      location: calendarEvents.location,
+      start_at: calendarEvents.start_at,
+      end_at: calendarEvents.end_at,
+      image_url: calendarEvents.image_url,
+      recurrence_rule: calendarEvents.recurrence_rule,
+      created_at: calendarEvents.created_at,
+      updated_at: calendarEvents.updated_at,
+    })
+    .from(calendarEvents)
+    .orderBy(asc(calendarEvents.start_at));
+  const calendarEventsList = (
+    (calendarEventsData as unknown as CalendarEvent[]) || []
+  ).map((e) => ({
+    ...e,
+    start_at: toIso(e.start_at) as string,
+    end_at: toIso(e.end_at),
+    created_at: toIso(e.created_at) as string,
+    updated_at: toIso(e.updated_at) as string,
+  }));
 
-  const { data: calendarExceptionsData } = await supabaseAdmin
-    .from("calendar_event_exceptions")
-    .select("*");
-  const calendarExceptions =
-    (calendarExceptionsData as CalendarEventException[]) || [];
+  const calendarExceptionsData = await getDb()
+    .select({
+      id: calendarEventExceptions.id,
+      event_id: calendarEventExceptions.event_id,
+      exception_date: calendarEventExceptions.exception_date,
+      created_at: calendarEventExceptions.created_at,
+    })
+    .from(calendarEventExceptions);
+  const calendarExceptions = (
+    (calendarExceptionsData as unknown as CalendarEventException[]) || []
+  ).map((ex) => ({
+    ...ex,
+    exception_date: toIso(ex.exception_date) as string,
+    created_at: toIso(ex.created_at) as string,
+  }));
 
+  // settings テーブルに tab_calendar 列は無い（schema.ts に無い）ため
+  // tabCalendar は常に固定値 "カレンダー" を渡す。
   return (
     <div className="container">
       <div
@@ -129,16 +235,16 @@ export default async function HomePage() {
         diaryEntries={diaryEntries}
         threadsWithComments={threadsWithComments}
         currentUserId={userId}
-        statusUnread={settings?.status_unread || "未読"}
-        statusRead={settings?.status_read || "既読"}
-        statusDone={settings?.status_done || "読んだ"}
+        statusUnread={row?.status_unread || "未読"}
+        statusRead={row?.status_read || "既読"}
+        statusDone={row?.status_done || "読んだ"}
         userProfiles={userProfiles}
-        tabDiary={settings?.tab_diary || "日記"}
-        tabNotes={settings?.tab_notes || "ノート"}
-        tabTodo={settings?.tab_todo || "TO-DO"}
-        tabCalendar={settings?.tab_calendar || "カレンダー"}
-        todoLists={todoLists}
-        calendarEvents={calendarEvents}
+        tabDiary={row?.tab_diary || "日記"}
+        tabNotes={row?.tab_notes || "ノート"}
+        tabTodo={row?.tab_todo || "TO-DO"}
+        tabCalendar="カレンダー"
+        todoLists={todoListsWithItems}
+        calendarEvents={calendarEventsList}
         calendarExceptions={calendarExceptions}
       />
     </div>

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { todoLists } from "@/db/schema";
 
 export async function PUT(
   request: Request,
@@ -19,11 +21,12 @@ export async function PUT(
     return NextResponse.json({ error: "タイトルは必須です" }, { status: 400 });
   }
 
-  const { data: list } = await supabaseAdmin
-    .from("todo_lists")
-    .select("created_by")
-    .eq("id", params.id)
-    .single();
+  const listRows = await getDb()
+    .select({ created_by: todoLists.created_by })
+    .from(todoLists)
+    .where(eq(todoLists.id, params.id))
+    .limit(1);
+  const list = listRows[0];
 
   if (!list) {
     return NextResponse.json(
@@ -35,18 +38,26 @@ export async function PUT(
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("todo_lists")
-    .update({ title: body.title.trim(), updated_at: new Date().toISOString() })
-    .eq("id", params.id)
-    .select("id, title, created_by, created_at, updated_at")
-    .single();
+  try {
+    const rows = await getDb()
+      .update(todoLists)
+      .set({ title: body.title.trim(), updated_at: new Date() })
+      .where(eq(todoLists.id, params.id))
+      .returning({
+        id: todoLists.id,
+        title: todoLists.title,
+        created_by: todoLists.created_by,
+        created_at: todoLists.created_at,
+        updated_at: todoLists.updated_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function DELETE(
@@ -60,11 +71,12 @@ export async function DELETE(
 
   const userId = (session.user as any).id as string;
 
-  const { data: list } = await supabaseAdmin
-    .from("todo_lists")
-    .select("created_by")
-    .eq("id", params.id)
-    .single();
+  const listRows = await getDb()
+    .select({ created_by: todoLists.created_by })
+    .from(todoLists)
+    .where(eq(todoLists.id, params.id))
+    .limit(1);
+  const list = listRows[0];
 
   if (!list) {
     return NextResponse.json(
@@ -76,13 +88,13 @@ export async function DELETE(
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("todo_lists")
-    .delete()
-    .eq("id", params.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb().delete(todoLists).where(eq(todoLists.id, params.id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ success: true });

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { and, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { pushSubscriptions } from "@/db/schema";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -18,17 +20,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { error } = await supabaseAdmin.from("push_subscriptions").upsert(
-    {
-      user_id: userId,
-      endpoint,
-      keys,
-    },
-    { onConflict: "endpoint" }
-  );
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .insert(pushSubscriptions)
+      .values({
+        user_id: userId,
+        endpoint,
+        keys,
+      })
+      .onConflictDoUpdate({
+        target: pushSubscriptions.endpoint,
+        set: { user_id: userId, keys },
+      });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -40,13 +49,20 @@ export async function DELETE(req: NextRequest) {
   const { endpoint } = await req.json();
   const userId = (session.user as any).id;
 
-  const { error } = await supabaseAdmin
-    .from("push_subscriptions")
-    .delete()
-    .eq("endpoint", endpoint)
-    .eq("user_id", userId);
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .delete(pushSubscriptions)
+      .where(
+        and(
+          eq(pushSubscriptions.endpoint, endpoint),
+          eq(pushSubscriptions.user_id, userId)
+        )
+      );
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

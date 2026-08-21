@@ -1,6 +1,15 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { supabase } from "./supabase";
+import { eq, sql } from "drizzle-orm";
+import { getDb } from "./db";
+import { users } from "@/db/schema";
+
+type VerifyUserRow = {
+  id: string;
+  username: string;
+  display_name: string;
+  profile_image_url: string | null;
+};
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,21 +22,19 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const { data, error } = await supabase.rpc("verify_user", {
-          p_username: credentials.username,
-          p_password: credentials.password,
-        });
+        const db = getDb();
+        const result = await db.execute(
+          sql`select * from verify_user(${credentials.username}, ${credentials.password})`
+        );
+        const rows = result.rows as VerifyUserRow[];
+        if (!rows || rows.length === 0) return null;
 
-        if (error || !data || data.length === 0) return null;
+        const user = rows[0];
 
-        const user = data[0];
-
-        await supabase
-          .from("users")
-          .update({
-            last_login_at: new Date().toISOString(),
-          })
-          .eq("id", user.id);
+        await db
+          .update(users)
+          .set({ last_login_at: new Date() })
+          .where(eq(users.id, user.id));
 
         return {
           id: user.id,

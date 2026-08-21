@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq, sql } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { threadComments } from "@/db/schema";
 import { notifyOtherUsers } from "@/lib/push";
 
 export async function GET(
@@ -12,12 +14,17 @@ export async function GET(
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data, error } = await supabaseAdmin.rpc("get_thread_comments", {
-    p_thread_id: params.id,
-  });
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const result = await getDb().execute(
+      sql`select * from get_thread_comments(${params.id})`
+    );
+    return NextResponse.json(result.rows);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -28,16 +35,22 @@ export async function POST(req: NextRequest) {
   const { thread_id, title, body, image_url } = await req.json();
   const authorId = (session.user as any).id;
 
-  const { error } = await supabaseAdmin.from("thread_comments").insert({
-    thread_id,
-    author_id: authorId,
-    title: title || "",
-    body,
-    image_url: image_url || null,
-  });
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .insert(threadComments)
+      .values({
+        thread_id,
+        author_id: authorId,
+        title: title || "",
+        body,
+        image_url: image_url || null,
+      });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
 
   await notifyOtherUsers({
     authorId,
@@ -57,28 +70,33 @@ export async function PUT(req: NextRequest) {
   const { id, title, body, image_url } = await req.json();
   const userId = (session.user as any).id;
 
-  const { data: comment } = await supabaseAdmin
-    .from("thread_comments")
-    .select("author_id")
-    .eq("id", id)
-    .single();
+  const rows = await getDb()
+    .select({ author_id: threadComments.author_id })
+    .from(threadComments)
+    .where(eq(threadComments.id, id))
+    .limit(1);
+  const comment = rows[0];
 
   if (!comment || comment.author_id !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("thread_comments")
-    .update({
-      title: title || "",
-      body,
-      image_url,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .update(threadComments)
+      .set({
+        title: title || "",
+        body,
+        image_url,
+        updated_at: new Date(),
+      })
+      .where(eq(threadComments.id, id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -90,21 +108,24 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   const userId = (session.user as any).id;
 
-  const { data: comment } = await supabaseAdmin
-    .from("thread_comments")
-    .select("author_id")
-    .eq("id", id)
-    .single();
+  const rows = await getDb()
+    .select({ author_id: threadComments.author_id })
+    .from(threadComments)
+    .where(eq(threadComments.id, id))
+    .limit(1);
+  const comment = rows[0];
 
   if (!comment || comment.author_id !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("thread_comments")
-    .delete()
-    .eq("id", id);
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb().delete(threadComments).where(eq(threadComments.id, id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

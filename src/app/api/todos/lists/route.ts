@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { asc } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { todoLists } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -11,16 +13,25 @@ export async function GET() {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("todo_lists")
-    .select("id, title, created_by, created_at, updated_at")
-    .order("created_at", { ascending: true });
+  try {
+    const rows = await getDb()
+      .select({
+        id: todoLists.id,
+        title: todoLists.title,
+        created_by: todoLists.created_by,
+        created_at: todoLists.created_at,
+        updated_at: todoLists.updated_at,
+      })
+      .from(todoLists)
+      .orderBy(asc(todoLists.created_at));
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows || []);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data || []);
 }
 
 export async function POST(request: Request) {
@@ -36,15 +47,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "タイトルは必須です" }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("todo_lists")
-    .insert({ title: body.title.trim(), created_by: userId })
-    .select("id, title, created_by, created_at, updated_at")
-    .single();
+  try {
+    const rows = await getDb()
+      .insert(todoLists)
+      .values({ title: body.title.trim(), created_by: userId })
+      .returning({
+        id: todoLists.id,
+        title: todoLists.title,
+        created_by: todoLists.created_by,
+        created_at: todoLists.created_at,
+        updated_at: todoLists.updated_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null, { status: 201 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data, { status: 201 });
 }

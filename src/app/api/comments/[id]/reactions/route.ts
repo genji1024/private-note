@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { and, asc, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { commentReactions, reactionTypes } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -9,21 +11,40 @@ export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { data: reactions, error } = await supabaseAdmin
-    .from("comment_reactions")
-    .select("id, comment_id, user_id, reaction_type_id, created_at")
-    .eq("comment_id", params.id);
+  try {
+    const reactions = await getDb()
+      .select({
+        id: commentReactions.id,
+        comment_id: commentReactions.comment_id,
+        user_id: commentReactions.user_id,
+        reaction_type_id: commentReactions.reaction_type_id,
+        created_at: commentReactions.created_at,
+      })
+      .from(commentReactions)
+      .where(eq(commentReactions.comment_id, params.id));
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const types = await getDb()
+      .select({
+        id: reactionTypes.id,
+        type: reactionTypes.type,
+        value: reactionTypes.value,
+        label: reactionTypes.label,
+        sort_order: reactionTypes.sort_order,
+        created_at: reactionTypes.created_at,
+      })
+      .from(reactionTypes)
+      .orderBy(asc(reactionTypes.sort_order));
+
+    return NextResponse.json({
+      reactions: reactions || [],
+      types: types || [],
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  const { data: types } = await supabaseAdmin
-    .from("reaction_types")
-    .select("*")
-    .order("sort_order");
-
-  return NextResponse.json({ reactions: reactions || [], types: types || [] });
 }
 
 export async function POST(
@@ -38,24 +59,33 @@ export async function POST(
   const userId = (session.user as any).id as string;
   const { reaction_type_id } = await request.json();
 
-  const { data, error } = await supabaseAdmin
-    .from("comment_reactions")
-    .upsert(
-      {
+  try {
+    const rows = await getDb()
+      .insert(commentReactions)
+      .values({
         comment_id: params.id,
         user_id: userId,
         reaction_type_id,
-      },
-      { onConflict: "comment_id, user_id" }
-    )
-    .select()
-    .single();
+      })
+      .onConflictDoUpdate({
+        target: [commentReactions.comment_id, commentReactions.user_id],
+        set: { reaction_type_id },
+      })
+      .returning({
+        id: commentReactions.id,
+        comment_id: commentReactions.comment_id,
+        user_id: commentReactions.user_id,
+        reaction_type_id: commentReactions.reaction_type_id,
+        created_at: commentReactions.created_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function DELETE(
@@ -69,14 +99,20 @@ export async function DELETE(
 
   const userId = (session.user as any).id as string;
 
-  const { error } = await supabaseAdmin
-    .from("comment_reactions")
-    .delete()
-    .eq("comment_id", params.id)
-    .eq("user_id", userId);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .delete(commentReactions)
+      .where(
+        and(
+          eq(commentReactions.comment_id, params.id),
+          eq(commentReactions.user_id, userId)
+        )
+      );
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ success: true });

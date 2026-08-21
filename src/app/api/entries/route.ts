@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { entries } from "@/db/schema";
 import { notifyOtherUsers } from "@/lib/push";
 
 export async function POST(req: NextRequest) {
@@ -12,15 +14,21 @@ export async function POST(req: NextRequest) {
   const { title, body, image_url } = await req.json();
   const authorId = (session.user as any).id;
 
-  const { error } = await supabaseAdmin.from("entries").insert({
-    author_id: authorId,
-    title,
-    body,
-    image_url: image_url || null,
-  });
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .insert(entries)
+      .values({
+        author_id: authorId,
+        title,
+        body,
+        image_url: image_url || null,
+      });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
 
   await notifyOtherUsers({
     authorId,
@@ -40,23 +48,28 @@ export async function PUT(req: NextRequest) {
   const { id, title, body, image_url } = await req.json();
   const userId = (session.user as any).id;
 
-  const { data: entry } = await supabaseAdmin
-    .from("entries")
-    .select("author_id")
-    .eq("id", id)
-    .single();
+  const rows = await getDb()
+    .select({ author_id: entries.author_id })
+    .from(entries)
+    .where(eq(entries.id, id))
+    .limit(1);
+  const entry = rows[0];
 
   if (!entry || entry.author_id !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("entries")
-    .update({ title, body, image_url, updated_at: new Date().toISOString() })
-    .eq("id", id);
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .update(entries)
+      .set({ title, body, image_url, updated_at: new Date() })
+      .where(eq(entries.id, id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -68,19 +81,24 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json();
   const userId = (session.user as any).id;
 
-  const { data: entry } = await supabaseAdmin
-    .from("entries")
-    .select("author_id")
-    .eq("id", id)
-    .single();
+  const rows = await getDb()
+    .select({ author_id: entries.author_id })
+    .from(entries)
+    .where(eq(entries.id, id))
+    .limit(1);
+  const entry = rows[0];
 
   if (!entry || entry.author_id !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin.from("entries").delete().eq("id", id);
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb().delete(entries).where(eq(entries.id, id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

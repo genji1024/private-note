@@ -1,23 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 
-const { mockGetServerSession, uploadMock, getPublicUrlMock, mockAdmin } =
-  vi.hoisted(() => {
+const { mockGetServerSession, uploadImageMock, getPublicUrlMock } = vi.hoisted(
+  () => {
     const mockGetServerSession = vi.fn();
-    const uploadMock = vi.fn();
+    const uploadImageMock = vi.fn();
     const getPublicUrlMock = vi.fn();
-    const fromMock = vi.fn();
-    fromMock.mockReturnValue({
-      upload: uploadMock,
-      getPublicUrl: getPublicUrlMock,
-    });
-    const mockAdmin = {
-      storage: {
-        from: fromMock,
-      },
-    };
-    return { mockGetServerSession, uploadMock, getPublicUrlMock, mockAdmin };
-  });
+    return { mockGetServerSession, uploadImageMock, getPublicUrlMock };
+  }
+);
 
 vi.mock("next-auth", () => ({
   getServerSession: mockGetServerSession,
@@ -27,9 +18,9 @@ vi.mock("@/lib/auth", () => ({
   authOptions: {},
 }));
 
-vi.mock("@/lib/supabase", () => ({
-  supabaseAdmin: mockAdmin,
-  supabase: {},
+vi.mock("@/lib/storage", () => ({
+  uploadImage: uploadImageMock,
+  getPublicUrl: getPublicUrlMock,
 }));
 
 import { POST } from "./route";
@@ -70,12 +61,10 @@ function buildRequest(
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetServerSession.mockResolvedValue({ user: { id: "user-123" } });
-  uploadMock.mockResolvedValue({ data: { path: "x/y.jpg" }, error: null });
-  getPublicUrlMock.mockImplementation((fileName: string) => ({
-    data: {
-      publicUrl: `https://example.com/storage/v1/object/public/images/${fileName}`,
-    },
-  }));
+  uploadImageMock.mockResolvedValue({ key: "x/y.jpg" });
+  getPublicUrlMock.mockImplementation(
+    (fileName: string) => `https://minio.example.com/images/${fileName}`
+  );
 });
 
 describe("POST /api/upload", () => {
@@ -90,7 +79,7 @@ describe("POST /api/upload", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe(IMAGE_UNSUPPORTED_FORMAT_MESSAGE);
-    expect(uploadMock).not.toHaveBeenCalled();
+    expect(uploadImageMock).not.toHaveBeenCalled();
   });
 
   it("normalizes image/jpg to image/jpeg and derives extension from magic bytes", async () => {
@@ -102,18 +91,14 @@ describe("POST /api/upload", () => {
       ) as unknown as NextRequest
     );
     expect(res.status).toBe(200);
-    expect(uploadMock).toHaveBeenCalledTimes(1);
-    const [fileName, , options] = uploadMock.mock.calls[0] as [
-      string,
-      Uint8Array,
-      { contentType: string },
-    ];
+    expect(uploadImageMock).toHaveBeenCalledTimes(1);
+    const [fileName, bodyBytes, contentType] = uploadImageMock.mock
+      .calls[0] as [string, Uint8Array, string];
     expect(fileName).toMatch(/\.jpg$/);
-    expect(options.contentType).toBe("image/jpeg");
+    expect(bodyBytes).toBeInstanceOf(Uint8Array);
+    expect(contentType).toBe("image/jpeg");
     const body = await res.json();
-    expect(body.url).toBe(
-      `https://example.com/storage/v1/object/public/images/${fileName}`
-    );
+    expect(body.url).toBe(`https://minio.example.com/images/${fileName}`);
     expect(body.path).toBe(fileName);
   });
 
@@ -128,7 +113,7 @@ describe("POST /api/upload", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe(IMAGE_SIZE_ERROR_MESSAGE);
-    expect(uploadMock).not.toHaveBeenCalled();
+    expect(uploadImageMock).not.toHaveBeenCalled();
   });
 
   it("uploads a valid PNG and returns url/path", async () => {
@@ -140,7 +125,7 @@ describe("POST /api/upload", () => {
       ) as unknown as NextRequest
     );
     expect(res.status).toBe(200);
-    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(uploadImageMock).toHaveBeenCalledTimes(1);
     const body = await res.json();
     expect(body.url).toBeTruthy();
     expect(body.path).toBeTruthy();
@@ -157,7 +142,7 @@ describe("POST /api/upload", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toBe(IMAGE_INVALID_TYPE_MESSAGE);
-    expect(uploadMock).not.toHaveBeenCalled();
+    expect(uploadImageMock).not.toHaveBeenCalled();
   });
 
   it("accepts the reported failing ~4.18MB JPEG attachment", async () => {
@@ -175,18 +160,18 @@ describe("POST /api/upload", () => {
       ) as unknown as NextRequest
     );
     expect(res.status).toBe(200);
-    expect(uploadMock).toHaveBeenCalledTimes(1);
-    const [fileName, , options] = uploadMock.mock.calls[0] as [
+    expect(uploadImageMock).toHaveBeenCalledTimes(1);
+    const [fileName, , contentType] = uploadImageMock.mock.calls[0] as [
       string,
       Uint8Array,
-      { contentType: string },
+      string,
     ];
     expect(fileName).toMatch(/\.jpg$/);
-    expect(options.contentType).toBe("image/jpeg");
+    expect(contentType).toBe("image/jpeg");
   });
 
-  it("returns a JSON 500 when Supabase upload rejects", async () => {
-    uploadMock.mockRejectedValue(new Error("network down"));
+  it("returns a JSON 500 when the storage upload rejects", async () => {
+    uploadImageMock.mockRejectedValue(new Error("network down"));
     const res = await POST(
       buildRequest(
         new Uint8Array(JPEG_MAGIC),
@@ -199,8 +184,8 @@ describe("POST /api/upload", () => {
     expect(body.error).toBe(UPLOAD_SAVE_ERROR_MESSAGE);
   });
 
-  it("falls back to a clear message when Supabase error message is empty", async () => {
-    uploadMock.mockResolvedValue({ data: null, error: { message: "" } });
+  it("falls back to a clear message when the storage error message is empty", async () => {
+    uploadImageMock.mockRejectedValue(new Error(""));
     const res = await POST(
       buildRequest(
         new Uint8Array(JPEG_MAGIC),
@@ -211,5 +196,33 @@ describe("POST /api/upload", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe(UPLOAD_SAVE_ERROR_MESSAGE);
+  });
+
+  it("returns 401 when there is no session", async () => {
+    mockGetServerSession.mockResolvedValue(null);
+    const res = await POST(
+      buildRequest(
+        new Uint8Array(JPEG_MAGIC),
+        "image/jpeg",
+        "photo.jpg"
+      ) as unknown as NextRequest
+    );
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBe("Unauthorized");
+    expect(uploadImageMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when the file is missing from the form data", async () => {
+    const formData = new FormData();
+    const req = new Request("http://localhost/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const res = await POST(req as unknown as NextRequest);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("ファイルが指定されていません。");
+    expect(uploadImageMock).not.toHaveBeenCalled();
   });
 });

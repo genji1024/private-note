@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getDb } from "@/lib/db";
+import { commentReadStatus } from "@/db/schema";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -11,11 +12,16 @@ export async function POST(req: NextRequest) {
   const { comment_id } = await req.json();
   const readerId = (session.user as any).id;
 
-  const { error } = await supabaseAdmin
-    .from("comment_read_status")
-    .upsert({ comment_id, reader_id: readerId });
-
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb()
+      .insert(commentReadStatus)
+      .values({ comment_id, reader_id: readerId })
+      .onConflictDoNothing();
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

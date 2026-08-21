@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { settings } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +28,17 @@ const defaults: Settings = {
 };
 
 export async function GET() {
-  const { data } = await supabaseAdmin
-    .from("settings")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  let data: typeof settings.$inferSelect | undefined;
+  try {
+    const rows = await getDb()
+      .select()
+      .from(settings)
+      .where(eq(settings.id, 1))
+      .limit(1);
+    data = rows[0];
+  } catch {
+    data = undefined;
+  }
 
   if (!data) {
     return NextResponse.json(defaults);
@@ -59,7 +67,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json();
-  const updates: Partial<Settings> = {};
+  const updates: Partial<typeof settings.$inferInsert> = {};
 
   if (typeof body.site_title === "string" && body.site_title.trim()) {
     updates.site_title = body.site_title.trim();
@@ -83,15 +91,31 @@ export async function PUT(request: Request) {
     updates.tab_todo = body.tab_todo.trim();
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("settings")
-    .upsert({ id: 1, ...updates, updated_at: new Date().toISOString() })
-    .select()
-    .single();
+  try {
+    const rows = await getDb()
+      .insert(settings)
+      .values({ id: 1, ...updates, updated_at: new Date() })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { ...updates, updated_at: new Date() },
+      })
+      .returning({
+        id: settings.id,
+        site_title: settings.site_title,
+        tab_diary: settings.tab_diary,
+        tab_notes: settings.tab_notes,
+        tab_todo: settings.tab_todo,
+        status_unread: settings.status_unread,
+        status_read: settings.status_read,
+        status_done: settings.status_done,
+        updated_at: settings.updated_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data);
 }

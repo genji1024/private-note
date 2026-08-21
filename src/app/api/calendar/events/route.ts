@@ -1,30 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { asc, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { calendarEventExceptions, calendarEvents } from "@/db/schema";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: eventsData, error: eventsError } = await supabaseAdmin
-    .from("calendar_events")
-    .select("*")
-    .order("start_at", { ascending: true });
-  if (eventsError)
-    return NextResponse.json({ error: eventsError.message }, { status: 500 });
-  const { data: exceptionsData, error: exceptionsError } = await supabaseAdmin
-    .from("calendar_event_exceptions")
-    .select("*");
-  if (exceptionsError)
+  try {
+    const eventsData = await getDb()
+      .select({
+        id: calendarEvents.id,
+        author_id: calendarEvents.author_id,
+        title: calendarEvents.title,
+        location: calendarEvents.location,
+        start_at: calendarEvents.start_at,
+        end_at: calendarEvents.end_at,
+        image_url: calendarEvents.image_url,
+        recurrence_rule: calendarEvents.recurrence_rule,
+        created_at: calendarEvents.created_at,
+        updated_at: calendarEvents.updated_at,
+      })
+      .from(calendarEvents)
+      .orderBy(asc(calendarEvents.start_at));
+
+    const exceptionsData = await getDb()
+      .select({
+        id: calendarEventExceptions.id,
+        event_id: calendarEventExceptions.event_id,
+        exception_date: calendarEventExceptions.exception_date,
+        created_at: calendarEventExceptions.created_at,
+      })
+      .from(calendarEventExceptions);
+    return NextResponse.json({
+      events: eventsData,
+      exceptions: exceptionsData || [],
+    });
+  } catch (err) {
     return NextResponse.json(
-      { error: exceptionsError.message },
+      { error: (err as Error).message },
       { status: 500 }
     );
-  return NextResponse.json({
-    events: eventsData,
-    exceptions: exceptionsData || [],
-  });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -39,22 +58,37 @@ export async function POST(req: NextRequest) {
       { error: "title and start_at are required" },
       { status: 400 }
     );
-  const { data, error } = await supabaseAdmin
-    .from("calendar_events")
-    .insert({
-      author_id: authorId,
-      title,
-      location: location || "",
-      start_at,
-      end_at: end_at || null,
-      image_url: image_url || null,
-      recurrence_rule: recurrence_rule || null,
-    })
-    .select()
-    .single();
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  try {
+    const rows = await getDb()
+      .insert(calendarEvents)
+      .values({
+        author_id: authorId,
+        title,
+        location: location || "",
+        start_at,
+        end_at: end_at || null,
+        image_url: image_url || null,
+        recurrence_rule: recurrence_rule || null,
+      })
+      .returning({
+        id: calendarEvents.id,
+        author_id: calendarEvents.author_id,
+        title: calendarEvents.title,
+        location: calendarEvents.location,
+        start_at: calendarEvents.start_at,
+        end_at: calendarEvents.end_at,
+        image_url: calendarEvents.image_url,
+        recurrence_rule: calendarEvents.recurrence_rule,
+        created_at: calendarEvents.created_at,
+        updated_at: calendarEvents.updated_at,
+      });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(req: NextRequest) {
@@ -66,14 +100,15 @@ export async function PUT(req: NextRequest) {
   const userId = (session.user as any).id;
   if (!id)
     return NextResponse.json({ error: "id is required" }, { status: 400 });
-  const { data: existing } = await supabaseAdmin
-    .from("calendar_events")
-    .select("author_id")
-    .eq("id", id)
-    .single();
+  const existingRows = await getDb()
+    .select({ author_id: calendarEvents.author_id })
+    .from(calendarEvents)
+    .where(eq(calendarEvents.id, id))
+    .limit(1);
+  const existing = existingRows[0];
   if (!existing || existing.author_id !== userId)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<typeof calendarEvents.$inferInsert> = {};
   if (title !== undefined) updates.title = title;
   if (location !== undefined) updates.location = location;
   if (start_at !== undefined) updates.start_at = start_at;
@@ -81,16 +116,31 @@ export async function PUT(req: NextRequest) {
   if (image_url !== undefined) updates.image_url = image_url || null;
   if (recurrence_rule !== undefined)
     updates.recurrence_rule = recurrence_rule || null;
-  updates.updated_at = new Date().toISOString();
-  const { data, error } = await supabaseAdmin
-    .from("calendar_events")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  updates.updated_at = new Date();
+  try {
+    const rows = await getDb()
+      .update(calendarEvents)
+      .set(updates)
+      .where(eq(calendarEvents.id, id))
+      .returning({
+        id: calendarEvents.id,
+        author_id: calendarEvents.author_id,
+        title: calendarEvents.title,
+        location: calendarEvents.location,
+        start_at: calendarEvents.start_at,
+        end_at: calendarEvents.end_at,
+        image_url: calendarEvents.image_url,
+        recurrence_rule: calendarEvents.recurrence_rule,
+        created_at: calendarEvents.created_at,
+        updated_at: calendarEvents.updated_at,
+      });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(req: NextRequest) {
@@ -99,19 +149,28 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id, delete_mode, occurrence_date } = await req.json();
   const userId = (session.user as any).id;
-  const { data: existing } = await supabaseAdmin
-    .from("calendar_events")
-    .select("author_id, recurrence_rule")
-    .eq("id", id)
-    .single();
+  const existingRows = await getDb()
+    .select({
+      author_id: calendarEvents.author_id,
+      recurrence_rule: calendarEvents.recurrence_rule,
+    })
+    .from(calendarEvents)
+    .where(eq(calendarEvents.id, id))
+    .limit(1);
+  const existing = existingRows[0];
   if (!existing || existing.author_id !== userId)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (delete_mode === "single" && occurrence_date) {
-    const { error } = await supabaseAdmin
-      .from("calendar_event_exceptions")
-      .insert({ event_id: id, exception_date: occurrence_date });
-    if (error)
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    try {
+      await getDb()
+        .insert(calendarEventExceptions)
+        .values({ event_id: id, exception_date: occurrence_date });
+    } catch (err) {
+      return NextResponse.json(
+        { error: (err as Error).message },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ ok: true });
   }
   if (delete_mode === "future" && occurrence_date) {
@@ -121,29 +180,35 @@ export async function DELETE(req: NextRequest) {
         : null;
       if (rule) {
         rule.until = occurrence_date;
-        const { error } = await supabaseAdmin
-          .from("calendar_events")
-          .update({
+        await getDb()
+          .update(calendarEvents)
+          .set({
             recurrence_rule: JSON.stringify(rule),
-            updated_at: new Date().toISOString(),
+            updated_at: new Date(),
           })
-          .eq("id", id);
-        if (error)
-          return NextResponse.json({ error: error.message }, { status: 500 });
+          .where(eq(calendarEvents.id, id));
       }
-    } catch {
+    } catch (err) {
+      if ((err as Error).message.includes("Unexpected")) {
+        return NextResponse.json(
+          { error: "Invalid recurrence rule" },
+          { status: 500 }
+        );
+      }
       return NextResponse.json(
-        { error: "Invalid recurrence rule" },
+        { error: (err as Error).message },
         { status: 500 }
       );
     }
     return NextResponse.json({ ok: true });
   }
-  const { error } = await supabaseAdmin
-    .from("calendar_events")
-    .delete()
-    .eq("id", id);
-  if (error)
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb().delete(calendarEvents).where(eq(calendarEvents.id, id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ ok: true });
 }

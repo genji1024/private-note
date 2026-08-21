@@ -1,5 +1,7 @@
 import { API_BASE } from "@/lib/api";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { settings } from "@/db/schema";
 
 const DEFAULT_SITE_TITLE = "ちひろノート";
 
@@ -7,12 +9,12 @@ export const dynamic = "force-dynamic";
 
 async function getSiteTitle(): Promise<string> {
   try {
-    const { data } = await supabaseAdmin
-      .from("settings")
-      .select("site_title")
-      .eq("id", 1)
-      .single();
-    return data?.site_title || DEFAULT_SITE_TITLE;
+    const rows = await getDb()
+      .select({ site_title: settings.site_title })
+      .from(settings)
+      .where(eq(settings.id, 1))
+      .limit(1);
+    return rows[0]?.site_title || DEFAULT_SITE_TITLE;
   } catch {
     return DEFAULT_SITE_TITLE;
   }

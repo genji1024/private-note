@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getPublicUrl, uploadImage } from "@/lib/storage";
 import {
   MAX_IMAGE_SIZE_BYTES,
   IMAGE_SIZE_ERROR_MESSAGE,
@@ -59,24 +59,11 @@ export async function POST(req: NextRequest) {
   const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${result.extension}`;
 
   try {
-    const { error } = await supabaseAdmin.storage
-      .from("images")
-      .upload(fileName, bytes, { contentType: result.mimeType });
+    await uploadImage(fileName, bytes, result.mimeType);
 
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error("Supabase storage upload failed:", error);
-      return NextResponse.json(
-        { error: error.message || UPLOAD_SAVE_ERROR_MESSAGE },
-        { status: 500 }
-      );
-    }
+    const url = getPublicUrl(fileName);
 
-    const { data: urlData } = supabaseAdmin.storage
-      .from("images")
-      .getPublicUrl(fileName);
-
-    return NextResponse.json({ url: urlData.publicUrl, path: fileName });
+    return NextResponse.json({ url, path: fileName });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Image upload failed:", err);

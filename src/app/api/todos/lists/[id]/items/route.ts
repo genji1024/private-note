@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { asc, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { todoItems } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -14,17 +16,30 @@ export async function GET(
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("todo_items")
-    .select("*")
-    .eq("todo_list_id", params.id)
-    .order("created_at", { ascending: true });
+  try {
+    const rows = await getDb()
+      .select({
+        id: todoItems.id,
+        todo_list_id: todoItems.todo_list_id,
+        title: todoItems.title,
+        done: todoItems.done,
+        done_by: todoItems.done_by,
+        done_at: todoItems.done_at,
+        created_by: todoItems.created_by,
+        created_at: todoItems.created_at,
+        updated_at: todoItems.updated_at,
+      })
+      .from(todoItems)
+      .where(eq(todoItems.todo_list_id, params.id))
+      .orderBy(asc(todoItems.created_at));
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows || []);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data || []);
 }
 
 export async function POST(
@@ -43,19 +58,31 @@ export async function POST(
     return NextResponse.json({ error: "タイトルは必須です" }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("todo_items")
-    .insert({
-      todo_list_id: params.id,
-      title: body.title.trim(),
-      created_by: userId,
-    })
-    .select("*")
-    .single();
+  try {
+    const rows = await getDb()
+      .insert(todoItems)
+      .values({
+        todo_list_id: params.id,
+        title: body.title.trim(),
+        created_by: userId,
+      })
+      .returning({
+        id: todoItems.id,
+        todo_list_id: todoItems.todo_list_id,
+        title: todoItems.title,
+        done: todoItems.done,
+        done_by: todoItems.done_by,
+        done_at: todoItems.done_at,
+        created_by: todoItems.created_by,
+        created_at: todoItems.created_at,
+        updated_at: todoItems.updated_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null, { status: 201 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data, { status: 201 });
 }

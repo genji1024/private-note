@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { users } from "@/db/schema";
 import ProfileForm from "@/components/ProfileForm";
 import LogoutButton from "@/components/LogoutButton";
 
@@ -12,11 +14,16 @@ export default async function ProfilePage() {
 
   const userId = (session.user as any).id as string;
 
-  const { data: user } = await supabaseAdmin
-    .from("users")
-    .select("username, display_name, profile_image_url")
-    .eq("id", userId)
-    .single();
+  const rows = await getDb()
+    .select({
+      username: users.username,
+      display_name: users.display_name,
+      profile_image_url: users.profile_image_url,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const user = rows[0];
 
   if (!user) redirect("/login");
 

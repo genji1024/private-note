@@ -11,3 +11,6 @@ yarn-error.log*
 .env
 vercel.json
 tsconfig.tsbuildinfo
+# drizzle-kit generate の出力（gitignore しない場合は生成後に削除すること）
+/drizzle
+/drizzle-meta

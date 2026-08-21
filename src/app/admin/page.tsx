@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { asc, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { reactionTypes, settings } from "@/db/schema";
 import AdminForm from "./AdminForm";
 import type { ReactionType } from "@/lib/types";
 
@@ -12,13 +14,14 @@ export default async function AdminPage() {
   const username = (session.user as any).username as string;
   if (username !== "genji") redirect("/");
 
-  const { data } = await supabaseAdmin
-    .from("settings")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  const rows = await getDb()
+    .select()
+    .from(settings)
+    .where(eq(settings.id, 1))
+    .limit(1);
+  const data = rows[0];
 
-  const settings = {
+  const settingsData = {
     site_title: data?.site_title || "ちひろノート",
     status_unread: data?.status_unread || "未読",
     status_read: data?.status_read || "既読",
@@ -28,17 +31,24 @@ export default async function AdminPage() {
     tab_todo: data?.tab_todo || "TO-DO",
   };
 
-  const { data: reactionTypes } = await supabaseAdmin
-    .from("reaction_types")
-    .select("*")
-    .order("sort_order");
+  const reactionTypeRows = await getDb()
+    .select({
+      id: reactionTypes.id,
+      type: reactionTypes.type,
+      value: reactionTypes.value,
+      label: reactionTypes.label,
+      sort_order: reactionTypes.sort_order,
+      created_at: reactionTypes.created_at,
+    })
+    .from(reactionTypes)
+    .orderBy(asc(reactionTypes.sort_order));
 
   return (
     <div className="container" style={{ maxWidth: "500px" }}>
       <h2 style={{ marginBottom: "1rem" }}>Admin 設定</h2>
       <AdminForm
-        settings={settings}
-        initialReactionTypes={reactionTypes as ReactionType[] | null}
+        settings={settingsData}
+        initialReactionTypes={(reactionTypeRows as ReactionType[]) || null}
       />
     </div>
   );

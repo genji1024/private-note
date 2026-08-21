@@ -1,21 +1,33 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { asc, eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { reactionTypes } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from("reaction_types")
-    .select("*")
-    .order("sort_order");
+  try {
+    const rows = await getDb()
+      .select({
+        id: reactionTypes.id,
+        type: reactionTypes.type,
+        value: reactionTypes.value,
+        label: reactionTypes.label,
+        sort_order: reactionTypes.sort_order,
+        created_at: reactionTypes.created_at,
+      })
+      .from(reactionTypes)
+      .orderBy(asc(reactionTypes.sort_order));
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows || []);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data || []);
 }
 
 export async function POST(request: Request) {
@@ -37,22 +49,31 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("reaction_types")
-    .insert({
-      type: body.type,
-      value: body.value,
-      label: body.label || "",
-      sort_order: body.sort_order || 0,
-    })
-    .select()
-    .single();
+  try {
+    const rows = await getDb()
+      .insert(reactionTypes)
+      .values({
+        type: body.type,
+        value: body.value,
+        label: body.label || "",
+        sort_order: body.sort_order || 0,
+      })
+      .returning({
+        id: reactionTypes.id,
+        type: reactionTypes.type,
+        value: reactionTypes.value,
+        label: reactionTypes.label,
+        sort_order: reactionTypes.sort_order,
+        created_at: reactionTypes.created_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function PUT(request: Request) {
@@ -71,24 +92,33 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "id は必須です" }, { status: 400 });
   }
 
-  const updates: Record<string, unknown> = {};
+  const updates: Partial<typeof reactionTypes.$inferInsert> = {};
   if (body.type) updates.type = body.type;
   if (body.value) updates.value = body.value;
   if (body.label !== undefined) updates.label = body.label;
   if (body.sort_order !== undefined) updates.sort_order = body.sort_order;
 
-  const { data, error } = await supabaseAdmin
-    .from("reaction_types")
-    .update(updates)
-    .eq("id", body.id)
-    .select()
-    .single();
+  try {
+    const rows = await getDb()
+      .update(reactionTypes)
+      .set(updates)
+      .where(eq(reactionTypes.id, body.id))
+      .returning({
+        id: reactionTypes.id,
+        type: reactionTypes.type,
+        value: reactionTypes.value,
+        label: reactionTypes.label,
+        sort_order: reactionTypes.sort_order,
+        created_at: reactionTypes.created_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function DELETE(request: Request) {
@@ -107,13 +137,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "id は必須です" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("reaction_types")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb().delete(reactionTypes).where(eq(reactionTypes.id, id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ success: true });

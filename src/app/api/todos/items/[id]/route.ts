@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabaseAdmin } from "@/lib/supabase";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { todoItems } from "@/db/schema";
 
 export async function PUT(
   request: Request,
@@ -15,7 +17,7 @@ export async function PUT(
   const userId = (session.user as any).id as string;
   const body = await request.json();
   const updates: Record<string, any> = {
-    updated_at: new Date().toISOString(),
+    updated_at: new Date(),
   };
 
   if (typeof body.title === "string" && body.title.trim()) {
@@ -25,25 +27,37 @@ export async function PUT(
     updates.done = body.done;
     if (body.done) {
       updates.done_by = userId;
-      updates.done_at = new Date().toISOString();
+      updates.done_at = new Date();
     } else {
       updates.done_by = null;
       updates.done_at = null;
     }
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("todo_items")
-    .update(updates)
-    .eq("id", params.id)
-    .select("*")
-    .single();
+  try {
+    const rows = await getDb()
+      .update(todoItems)
+      .set(updates)
+      .where(eq(todoItems.id, params.id))
+      .returning({
+        id: todoItems.id,
+        todo_list_id: todoItems.todo_list_id,
+        title: todoItems.title,
+        done: todoItems.done,
+        done_by: todoItems.done_by,
+        done_at: todoItems.done_at,
+        created_by: todoItems.created_by,
+        created_at: todoItems.created_at,
+        updated_at: todoItems.updated_at,
+      });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(rows[0] ?? null);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function DELETE(
@@ -57,11 +71,12 @@ export async function DELETE(
 
   const userId = (session.user as any).id as string;
 
-  const { data: item } = await supabaseAdmin
-    .from("todo_items")
-    .select("created_by")
-    .eq("id", params.id)
-    .single();
+  const itemRows = await getDb()
+    .select({ created_by: todoItems.created_by })
+    .from(todoItems)
+    .where(eq(todoItems.id, params.id))
+    .limit(1);
+  const item = itemRows[0];
 
   if (!item) {
     return NextResponse.json(
@@ -73,13 +88,13 @@ export async function DELETE(
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("todo_items")
-    .delete()
-    .eq("id", params.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await getDb().delete(todoItems).where(eq(todoItems.id, params.id));
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ success: true });

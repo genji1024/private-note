@@ -1,5 +1,7 @@
 import webpush from "web-push";
-import { supabaseAdmin } from "./supabase";
+import { eq, inArray, ne } from "drizzle-orm";
+import { getDb } from "./db";
+import { pushSubscriptions, users } from "@/db/schema";
 import { apiUrl } from "./api";
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
@@ -23,10 +25,14 @@ export async function sendPushNotification({
 }) {
   if (!vapidPublicKey || !vapidPrivateKey) return;
 
-  const { data: subscriptions } = await supabaseAdmin
-    .from("push_subscriptions")
-    .select("endpoint, keys")
-    .in("user_id", userIds);
+  const db = getDb();
+  const subscriptions = await db
+    .select({
+      endpoint: pushSubscriptions.endpoint,
+      keys: pushSubscriptions.keys,
+    })
+    .from(pushSubscriptions)
+    .where(inArray(pushSubscriptions.user_id, userIds));
 
   if (!subscriptions || subscriptions.length === 0) return;
 
@@ -44,10 +50,9 @@ export async function sendPushNotification({
         );
       } catch (err: any) {
         if (err.statusCode === 410 || err.statusCode === 404) {
-          await supabaseAdmin
-            .from("push_subscriptions")
-            .delete()
-            .eq("endpoint", sub.endpoint);
+          await db
+            .delete(pushSubscriptions)
+            .where(eq(pushSubscriptions.endpoint, sub.endpoint));
         }
       }
     })
@@ -65,15 +70,16 @@ export async function notifyOtherUsers({
   body: string;
   url?: string;
 }) {
-  const { data: users } = await supabaseAdmin
-    .from("users")
-    .select("id")
-    .neq("id", authorId);
+  const db = getDb();
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(ne(users.id, authorId));
 
-  if (!users || users.length === 0) return;
+  if (!rows || rows.length === 0) return;
 
   await sendPushNotification({
-    userIds: users.map((u) => u.id),
+    userIds: rows.map((u) => u.id),
     title,
     body,
     url,
